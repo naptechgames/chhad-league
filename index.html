@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#101c23">
 <meta name="application-name" content="Chhad League">
-<meta name="application-version" content="1.2.1">
+<meta name="application-version" content="1.2.2">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -313,16 +313,20 @@ function createStadium(canvas) {
       const next=2.95+.42*Math.cos((i+1)*.43);pipe([x,y,z],[x+1.52,next,z],.018,.018,navy,4);
       face([x+.12,y,z],[x+.91,y-.04,z],[x+.46,y-.61,z+.09],[cream,mint,coral,'#ffc354'][i%4],1)}
   }
+  let turfStart,fixturesStart;
   function buildCourt(){
     city();stands();
     box(0,-5.4,0,45.5,5.13,21.5,'#b97e69');box(0,-.27,0,45.7,.26,21.7,'#eab289');
     box(0,-.08,0,40,.08,18,'#378f86');
+    turfStart=mesh.length;
     for(let i=0;i<10;i++){const x=-20+i*4;
       quad([x,.005,-9],[x,.005,9],[x+4,.005,9],[x+4,.005,-9],i%2?'#398f83':'#3d9789',1)}
     for(let i=0;i<440;i++){let x=random()*39.5-19.75,z=random()*17.6-8.8;stripe(x,z,x+.03+random()*.16,z+.015,.013,'#65a599',.009)}
     function outline(x,z,X,Z){stripe(x,z,X,z,.084,cream);stripe(X,z,X,Z,.084,cream);stripe(X,Z,x,Z,.084,cream);stripe(x,Z,x,z,.084,cream)}
     outline(-19.95,-8.94,19.95,8.94);stripe(0,-8.9,0,8.9,.085,cream);ring(0,0,2.65,2.65,.085,cream);disk(0,0,.11,.11,cream);
-    for(let s of [-1,1]){outline(19.94*s,-4.95,14.5*s,4.95);outline(19.94*s,-2.72,17.92*s,2.72);disk(16*s,0,.13,.13,cream);goalMesh(s)}
+    for(let s of [-1,1]){outline(19.94*s,-4.95,14.5*s,4.95);outline(19.94*s,-2.72,17.92*s,2.72);disk(16*s,0,.13,.13,cream)}
+    fixturesStart=mesh.length;
+    for(const s of [-1,1])goalMesh(s);
     for(let i=0;i<9;i++){const x=-20+i*5;box(x,.02,-9.49,4.96,.82,.25,i%3===1?'#ed825e':navy);
       sign(i%3===1?'DHAKA':'CHHAD',x-1.02,.66,-9.35,.105,cream)}
     for(let s of [-1,1])for(let j=0;j<2;j++){const z=(j?1:-1)*6.35;box(s*21.45,.02,z,.25,.72,5,'#355768')}
@@ -353,10 +357,12 @@ function createStadium(canvas) {
   function makeKit(id,keeper=false){
     const vertices=[],shirt=keeper?(id<2?'#ffd55e':'#9397ff'):(id<2?'#42d9ac':'#ef684e'),dark=id<2?'#163d4a':'#37374b',trim=id<2?'#d6ffe6':'#ffe3b1';
     const skin=['#b77350','#cb8a65','#91593f','#cb8762'][id],hair=['#29242a','#372b28','#24252c','#402b25'][id],boots=['#e5ede1','#efad47','#eae4cb','#263542'][id];
+    const floorRings=keeper?Array.from({length:15},()=>[]):null;
     let joint=0;
     function vertex(p,n,col){vertices.push(...p,...rgb(col),...n,joint)}
     // Elliptical cross-sections with shared analytic normals shade continuously around each limb.
     function loft(rows,col,n=14){
+      if(floorRings)for(const [y,rx,rz,z=0,x=0] of rows)floorRings[joint].push(x,y,z,rx,rz);
       function point(i,j){
         const [y,rx,rz,z=0,x=0]=rows[j],a=i*tau/n,cs=Math.cos(a),sn=Math.sin(a);
         const prev=rows[Math.max(0,j-1)],next=rows[Math.min(rows.length-1,j+1)];
@@ -374,7 +380,10 @@ function createStadium(canvas) {
       const rows=[];for(let j=0;j<=8;j++){const a=-Math.PI/2+j*Math.PI/8,r=Math.max(.012,Math.cos(a));rows.push([y+ry*Math.sin(a),rx*r,rz*r,z,x])}
       loft(rows,c,14);
     }
-    function patch(a,b,c,d,color){const norm=unit(cross(v(b,a),v(c,a)));for(const p of [a,b,c,a,c,d])vertex(p,norm,color)}
+    function patch(a,b,c,d,color){
+      if(floorRings)for(const [x,y,z] of [a,b,c,d])floorRings[joint].push(x,y,z,0,0);
+      const norm=unit(cross(v(b,a),v(c,a)));for(const p of [a,b,c,a,c,d])vertex(p,norm,color)
+    }
     function number(ch,x,y,z,s,back=false){const dir=back?-1:1;
       for(let i=0;i<15;i++)if(glyphs[ch][i]==='1'){const X=x+dir*(i%3)*s,Y=y-Math.floor(i/3)*s;
         patch([X,Y,z],[X,Y-s,z],[X+dir*s,Y-s,z],[X+dir*s,Y,z],trim)}}
@@ -424,9 +433,24 @@ function createStadium(canvas) {
       if(keeper){oval(0,-.06,.019,.085,.12,.059,'#f7ebcc');oval(0,-.005,-.015,.066,.039,.056,dark)}
       else{oval(0,-.046,.011,.045,.075,.032,skin);oval((k?-.034:.034),-.045,.03,.018,.036,.02,skin)}
     }
-    return {data:new Float32Array(vertices),buffer:null,bones:new Float32Array(15*16)};
+    return {data:new Float32Array(vertices),buffer:null,bones:new Float32Array(15*16),floorRings};
   }
   const kits=[...Array.from({length:4},(_,i)=>makeKit(i)),makeKit(1,true),makeKit(2,true)];
+  function groundKeeper(k,flight){
+    const bones=k.bones,rings=kits[4+k.team].floorRings;
+    let lowest=Infinity;
+    for(let j=0;j<rings.length;j++){
+      const o=j*16,ax=bones[o+1],ay=bones[o+5],az=bones[o+9],points=rings[j];
+      for(let i=0;i<points.length;i+=5){
+        const center=bones[o+13]+ax*points[i]+ay*points[i+1]+az*points[i+2];
+        // The lower edge of a tilted elliptical mesh ring along the world's vertical axis.
+        const dx=ax*points[i+3],dz=az*points[i+4];
+        lowest=Math.min(lowest,center-Math.sqrt(dx*dx+dz*dz));
+      }
+    }
+    const floor=.022,shift=floor-lowest+Math.max(0,lowest-floor)*flight;
+    for(let i=13;i<bones.length;i+=16)bones[i]+=shift;
+  }
   function poseAthlete(p,bones,t,celebrate){
     const x=worldX(p.x),z=worldZ(p.y);
     const gait=Math.min(1,p.pace/155),phase=p.step,beat=Math.sin(phase),sprint=Math.min(1,Math.max(0,(p.pace-155)/145));
@@ -522,16 +546,21 @@ function createStadium(canvas) {
   if(gl){upload();canvas.addEventListener('webglcontextlost',e=>e.preventDefault());canvas.addEventListener('webglcontextrestored',upload)}
   function drawBuffer(buf,count){gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.vertexAttribPointer(0,3,gl.FLOAT,false,24,0);gl.vertexAttribPointer(1,3,gl.FLOAT,false,24,12);gl.drawArrays(gl.TRIANGLES,0,count/6)}
   function softwareDraw(arrays,right,up,forward,f,aspect){
-    const tris=[];
+    const backdrop=[],turf=[],upright=[];
     for(const arr of arrays)for(let i=0;i<arr.length;i+=18){
       const pts=[];let depth=0;
       for(let j=i;j<i+18;j+=6){const d=[arr[j]-camera[0],arr[j+1]-camera[1],arr[j+2]-camera[2]],z=dot(d,forward);if(z<.12)break;
         pts.push([(1+dot(d,right)*f/(aspect*z))*canvas.width/2,(1-dot(d,up)*f/z)*canvas.height/2]);depth+=z}
       if(pts.length!==3||pts.every(p=>p[0]<0)||pts.every(p=>p[0]>canvas.width)||pts.every(p=>p[1]<0)||pts.every(p=>p[1]>canvas.height))continue;
-      tris.push([depth,pts,'rgb('+[3,4,5].map(j=>Math.round(arr[i+j]*255)).join(',')+')']);
+      // A long pitch triangle can have a nearer centroid than a keeper standing on it.
+      let layer=upright;
+      if(arr===staticMesh){if(i<turfStart)layer=backdrop;else if(i<fixturesStart)layer=turf}
+      else if(arr[i+1]===arr[i+7]&&arr[i+1]===arr[i+13]&&arr[i+1]<=.066)layer=turf;
+      layer.push([depth,pts,'rgb('+[3,4,5].map(j=>Math.round(arr[i+j]*255)).join(',')+')']);
     }
     soft.clearRect(0,0,canvas.width,canvas.height);
-    for(const [,p,c] of tris.sort((a,b)=>b[0]-a[0])){soft.fillStyle=c;soft.beginPath();soft.moveTo(...p[0]);soft.lineTo(...p[1]);soft.lineTo(...p[2]);soft.fill()}
+    backdrop.sort((a,b)=>b[0]-a[0]);upright.sort((a,b)=>b[0]-a[0]);
+    for(const layer of [backdrop,turf,upright])for(const [,p,c] of layer){soft.fillStyle=c;soft.beginPath();soft.moveTo(...p[0]);soft.lineTo(...p[1]);soft.lineTo(...p[2]);soft.fill()}
   }
   function draw(state,time){
     const {players,active,mode,charging,charge}=state,menu=mode==='menu',reel=state.replay;
@@ -571,7 +600,7 @@ function createStadium(canvas) {
       }else if(keeper)bones.set(keepers[i-players.length].bones);
       else poseAthlete(players[i],bones,menu?t:elapsed,mode==='goal'&&players[i].team===state.scoring);
       const x=bones[12],z=bones[14];
-      if(keeper)disk(x,z,.37,.26+.33*Math.abs(bones[4])+ .33*Math.abs(bones[6]),'#32776f',.034);
+      if(keeper)disk(x,z,.37,.26+.33*Math.abs(bones[4])+ .33*Math.abs(bones[6]),'#32776f',.015);
       else disk(x+.11,z-.09,.40,.22,'#32776f',.034);
       if(!reel&&!menu&&i===active){ring(x,z,.55,.48,.05,'#ffdc68',.051,32);pipe([x,2.35,z],[x,2.52,z],.012,.108,'#ffdb62',4)}
       submitKit(kit);
@@ -598,7 +627,7 @@ function createStadium(canvas) {
       gl.disableVertexAttribArray(2);gl.disableVertexAttribArray(3);}
     else softwareDraw([staticMesh,actors],right,up,forward,f,aspect);
   }
-  return {draw,captureRigs,accelerated:!!gl};
+  return {draw,captureRigs,groundKeeper,accelerated:!!gl};
 }
 </script>
 <script>
@@ -1009,7 +1038,7 @@ function predictKeeperPlane(k){
 function stepKeepers(dt){
  for(const k of keepers){
    k.previous=k.contacts;
-   const incoming=ball.owner<0&&ball.shotTeam===1-k.team&&ball.vx*k.face<0;
+   const incoming=mode==='play'&&ball.owner<0&&ball.shotTeam===1-k.team&&ball.vx*k.face<0;
    if(!incoming){k.target=null;k.readIn=0}
    if(!k.phase&&incoming&&ball.shotAge>=.14){
      k.readIn-=dt;
@@ -1037,7 +1066,7 @@ function stepKeepers(dt){
 function poseKeeper(k){
  const b=k.bones,d=k.phase,t=d?d.time:0,extend=d?smooth01(t/.25)*(1-smooth01((t-.47)/.37)):0;
  const side=d?-k.face*Math.sign(d.travel):0,shuffle=Math.min(1,Math.abs(k.speed)/45)*(1-extend);
- const hip=.84+extend*(clamp((d?.height||0)+.25,.39,1.64)-.84)-.32*smooth01((t-.34)/.16)*(1-smooth01((t-.59)/.25));
+ const hip=.84+extend*(clamp((d?.height||0)+.25,.39,1.64)-.84);
  jointFrame(b,0,-1,(k.x-500)*.04,hip,(k.y-CY)*.04,0,k.face*Math.PI/2,-side*1.33*extend);
  jointFrame(b,1,0,0,.015,0,.23-.12*extend);
  jointFrame(b,2,1,0,.712,.005,-.19);
@@ -1051,6 +1080,9 @@ function poseKeeper(k){
    jointFrame(b,arm+1,arm,0,-.296,0,-.78+.62*extend);
    jointFrame(b,arm+2,arm+1,0,-.258,0,-.09);
  }
+ // Retain the airborne reach, then plant the lowest limb for landing and recovery.
+ const flight=d?smooth01(t/.16)*(1-smooth01((t-.32)/.23)):0;
+ stadium.groundKeeper(k,flight);
 }
 // Centres follow the same joints as the visible gloves, torso and legs.
 // Radius includes the football. Coordinates use pitch units for continuous contact tests.
@@ -1084,7 +1116,7 @@ function parryShot(from){
 function stepMatch(dt){
  elapsed+=dt;
  if(flash>0){flash=Math.max(0,flash-dt);if(!flash)updatePossession()}
- if(mode==='goal'){restart-=dt;if(restart<=0)afterGoalKickoff();return}
+ if(mode==='goal'){stepKeepers(dt);restart-=dt;if(restart<=0)afterGoalKickoff();return}
  const carrier=players[active],oldCool=carrier.cool,oldWait=carrier.skillWait,oldBurst=carrier.burst;
  for(const p of players){p.burst=Math.max(0,p.burst-dt);p.cool=Math.max(0,p.cool-dt);p.skillWait=Math.max(0,p.skillWait-dt)}
  if((oldCool&&!carrier.cool)||(oldWait&&!carrier.skillWait)||(oldBurst&&!carrier.burst))updateControls();
