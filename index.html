@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#101c23">
 <meta name="application-name" content="Chhad League">
-<meta name="application-version" content="1.2.0">
+<meta name="application-version" content="1.2.1">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1139,34 +1139,46 @@ formation(0);
 [[562,293,.18],[425,200,1.4],[604,187,-.6],[520,168,-1.3]].forEach(([x,y,heading],i)=>Object.assign(players[i],{x,y,heading}));
 syncBall();render(performance.now());let prev=0;
 function frame(t){let remaining=Math.min(.08,(t-(prev||t))/1000);prev=t;while(remaining>.00001){const dt=Math.min(1/60,remaining);update(dt);remaining-=dt}render(t);requestAnimationFrame(frame)}requestAnimationFrame(frame);
+let lastHandledTouch=-Infinity;
+document.addEventListener('pointerdown',()=>{lastHandledTouch=-Infinity},true);
+document.addEventListener('click',e=>{
+ // A compatibility click can land on another control when a touch changes the menu layout.
+ if(e.detail>0&&performance.now()-lastHandledTouch<700&&(!e.pointerType||e.pointerType==='touch'||e.sourceCapabilities?.firesTouchEvents)){
+   lastHandledTouch=-Infinity;e.preventDefault();e.stopImmediatePropagation();
+ }
+},true);
 function bindTap(id,activate){
- const button=$(id);let touchId=null,handledTouch=false,pressPortrait=false;
- button.onpointerdown=e=>{handledTouch=false;touchId=e.pointerType==='touch'?e.pointerId:null;pressPortrait=portraitPitch.matches};
+ const button=$(id);let touchId=null,pressPortrait=false;
+ button.onpointerdown=e=>{touchId=e.pointerType==='touch'?e.pointerId:null;pressPortrait=portraitPitch.matches};
  button.onpointercancel=()=>{touchId=null};
  button.onpointerup=e=>{
    if(e.pointerId!==touchId)return;
-   touchId=null;handledTouch=true;
+   touchId=null;lastHandledTouch=performance.now();
    if(pressPortrait!==portraitPitch.matches||!button.contains(document.elementFromPoint(e.clientX,e.clientY)))return;
    // A tap following a swipe can have a pointerup without a compatibility click.
    activate();
  };
- button.onclick=e=>{if(!handledTouch||e.detail===0)activate()};
+ button.onclick=activate;
 }
 const fullscreenButton=$('fullscreen'),root=document.documentElement,appFullscreen=matchMedia('(display-mode: fullscreen)');
 function fullscreenElement(){return document.fullscreenElement||document.webkitFullscreenElement}
 function canEnterFullscreen(){return !!((document.fullscreenEnabled&&root.requestFullscreen)||(document.webkitFullscreenEnabled&&root.webkitRequestFullscreen))}
 let hadFullscreen=!!fullscreenElement(),fullscreenPending=false;
+function needsFullscreenEntry(){
+ return touchLayout.matches&&canEnterFullscreen()&&!fullscreenElement()&&!appFullscreen.matches;
+}
 function syncFullscreen(){
  const active=!!fullscreenElement();
  fullscreenButton.hidden=!canEnterFullscreen()||(!active&&appFullscreen.matches);
  const label=active?'Exit full screen':'Enter full screen';
  fullscreenButton.setAttribute('aria-label',label);fullscreenButton.title=label;
+ if(mode==='menu')$('start').textContent=needsFullscreenEntry()?'Play full screen':'Kick off';
  if(active)$('view-status').hidden=true;
  if(hadFullscreen&&!active&&(mode==='play'||mode==='goal'||mode==='replay'))pause();
  hadFullscreen=active;
 }
 async function changeFullscreen(enter,manual=false){
- if(fullscreenPending||!canEnterFullscreen()||(enter&&(fullscreenElement()||appFullscreen.matches)))return;
+ if(fullscreenPending||!canEnterFullscreen()||(enter&&(fullscreenElement()||appFullscreen.matches)))return false;
  fullscreenPending=true;
  try{
    if(enter){
@@ -1174,10 +1186,12 @@ async function changeFullscreen(enter,manual=false){
      else await root.webkitRequestFullscreen();
    }else if(document.exitFullscreen)await document.exitFullscreen();
    else await document.webkitExitFullscreen();
+   return true;
  }catch{
    if(manual){
      const message=$('view-status');message.textContent='Open the game directly in your browser to use full screen.';message.hidden=false;
    }
+   return false;
  }finally{fullscreenPending=false;syncFullscreen()}
 }
 document.addEventListener('fullscreenchange',syncFullscreen);
@@ -1185,9 +1199,11 @@ document.addEventListener('webkitfullscreenchange',syncFullscreen);
 appFullscreen.addEventListener('change',syncFullscreen);
 syncFullscreen();
 bindTap('fullscreen',()=>{void changeFullscreen(!fullscreenElement(),true)});
-bindTap('start',()=>{
+bindTap('start',async()=>{
+ if(fullscreenPending)return;
  if(mode==='pause'){pause();return}
- if(touchLayout.matches)void changeFullscreen(true);
+ // Android can put its first-use system message over the pitch. Keep the clock at 1:30 until kickoff.
+ if(mode==='menu'&&needsFullscreenEntry()&&await changeFullscreen(true))return;
  begin();
 });
 bindTap('help-toggle',()=>{
@@ -1278,7 +1294,7 @@ for(const name of Object.keys(skillMoves)){
 }
 bindTap('pass',pass);bindTap('dash',dash);
 portraitPitch.addEventListener('change',()=>{resetInput();paintedCurl=null;updateViewCopy()});
-touchLayout.addEventListener('change',updateViewCopy);
+touchLayout.addEventListener('change',()=>{updateViewCopy();syncFullscreen()});
 updateViewCopy();
 window.addEventListener('blur',()=>{if(fullscreenPending&&!document.hidden)return;if(mode==='play'||mode==='goal'||mode==='replay')pause();else resetInput()});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&(mode==='play'||mode==='goal'||mode==='replay'))pause()});
