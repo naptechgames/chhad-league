@@ -4,7 +4,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#101c23">
 <meta name="application-name" content="Chhad League">
-<meta name="application-version" content="1.1.0">
+<meta name="application-version" content="1.2.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./game.webmanifest">
+<link rel="icon" type="image/png" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
 <meta name="description" content="Play a 90-second, three-a-side rooftop football match in Old Dhaka.">
 <title>Chhad League · Rooftop football</title>
 <style>
@@ -16,25 +22,32 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{margin:0;min-height:100vh;color:var(--text);background:radial-gradient(ellipse at 45% 0,#243b45,var(--page) 72%);font:1rem/1.45 var(--body)}
-main{max-width:1360px;margin:auto;padding:clamp(12px,2vw,26px) clamp(12px,3vw,38px) 20px}
-button,summary{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
-button{border:0}button:disabled{cursor:default}
-button:focus-visible,summary:focus-visible,canvas:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;overscroll-behavior:none;background:var(--page)}
+body{color:var(--text);font:1rem/1.45 var(--body)}
+main{position:relative;width:100%;height:100%;height:100dvh;isolation:isolate}
+:root:fullscreen main,:root:-webkit-full-screen main{height:100%}
+button{border:0;color:inherit;font:inherit;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button:disabled{cursor:default}
+button:focus-visible,canvas:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
 canvas:focus-visible{outline-offset:-4px}
-header,.brand,.tools,footer,.key-row{display:flex;align-items:center}
-header{justify-content:space-between;gap:8px;margin-bottom:12px}
-.brand{gap:10px;min-width:0}.brand b{font:italic 850 clamp(1.05rem,2.5vw,1.85rem)/1 var(--display);text-transform:uppercase;letter-spacing:-.025em}
-.mark{display:grid;place-items:center;width:36px;height:36px;flex:none;background:var(--gold);color:var(--ink);border-radius:7px 2px;transform:skew(-8deg);font:bold italic 25px Georgia,serif}
-.tools{gap:8px}.tool,.replay-skip{min-height:44px;padding:0 13px;background:var(--panel);border:1px solid var(--line);border-radius:8px;font-size:.875rem;font-weight:700}
-.tool:disabled{color:#98aaa9;border-color:#384b53}.tool[aria-pressed="true"]{color:var(--mint);border-color:#79b5a4}
-@media(hover:hover){.tool:hover:not(:disabled),.replay-skip:hover,.action:hover:enabled{filter:brightness(1.15)}.start:hover{background:#ffe1ad}}
-.arena{position:relative;isolation:isolate;overflow:hidden;aspect-ratio:1.88;border:1px solid #52656c;border-radius:14px;background:radial-gradient(circle at 82% 17%,#ffdfa2 0 3%,transparent 3.2%),linear-gradient(#8696b4,#dfada2 35%,#ffd4aa 69%,#b58c78);box-shadow:0 12px 32px #060b113d}
-.arena canvas{display:block;width:100%;height:100%;touch-action:none}
-.match-hud{
- position:absolute;z-index:1;inset:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) auto max(12px,env(safe-area-inset-left));
- display:grid;grid-template-columns:auto 1fr;grid-template-areas:"score meter" "status meter";gap:5px 10px;align-items:start;pointer-events:none
-}
+.arena{position:absolute;inset:0;overflow:hidden;background:linear-gradient(#8696b4,#dfada2 45%,#ffd4aa 70%,#b58c78)}
+.arena canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.tools{position:absolute;z-index:4;top:max(12px,calc(env(safe-area-inset-top) + 6px));right:max(14px,calc(env(safe-area-inset-right) + 8px));display:flex;gap:8px}
+.tool,.replay-skip,.help-toggle{display:inline-grid;place-items:center;min-width:48px;min-height:48px;background:#11262de8;border:1px solid #b9dfd566;box-shadow:0 2px 8px #0b202833;color:var(--text);font-size:.87rem;font-weight:700}
+.tool{position:relative;width:48px;height:48px;padding:0;border-radius:50%}
+.tool:active,.help-toggle:active,.replay-skip:active,.start:active{filter:brightness(.84)}
+.view-status{position:absolute;z-index:5;right:max(14px,env(safe-area-inset-right));top:max(70px,calc(env(safe-area-inset-top) + 64px));max-width:min(28ch,85%);margin:0;padding:8px 12px;border-radius:9px;background:var(--panel-deep);font-size:.84rem;pointer-events:none}
+.tool-glyph{display:block;position:relative;width:20px;height:20px;pointer-events:none}
+#pause .tool-glyph{width:13px;height:16px;border-left:4px solid;border-right:4px solid}
+#fullscreen .tool-glyph{--corners:linear-gradient(currentColor,currentColor);background:var(--corners) left top/7px 2px,var(--corners) left top/2px 7px,var(--corners) right top/7px 2px,var(--corners) right top/2px 7px,var(--corners) left bottom/7px 2px,var(--corners) left bottom/2px 7px,var(--corners) right bottom/7px 2px,var(--corners) right bottom/2px 7px;background-repeat:no-repeat}
+#fullscreen[aria-label="Exit full screen"] .tool-glyph{background-position:5px 5px,5px 5px,calc(100% - 5px) 5px,calc(100% - 5px) 5px,5px calc(100% - 5px),5px calc(100% - 5px),calc(100% - 5px) calc(100% - 5px),calc(100% - 5px) calc(100% - 5px)}
+#sound .tool-glyph::before{content:"";position:absolute;inset:2px 8px 2px 0;background:currentColor;clip-path:polygon(0 33%,33% 33%,100% 0,100% 100%,33% 67%,0 67%)}
+#sound .tool-glyph::after{content:"";position:absolute;right:0;top:4px;width:4px;height:10px;border-right:2px solid;border-radius:50%}
+#sound[aria-pressed="false"] .tool-glyph::after{top:2px;right:2px;width:2px;height:16px;border:0;border-radius:2px;background:currentColor;transform:rotate(-37deg)}
+body:is([data-screen="play"],[data-screen="goal"],[data-screen="replay"]) #sound{display:none}
+body:is([data-screen="play"],[data-screen="goal"],[data-screen="replay"]) #fullscreen[aria-label="Exit full screen"]{display:none}
+@media(hover:hover){.tool:hover,.replay-skip:hover,.help-toggle:hover,.action:hover:enabled{filter:brightness(1.15)}.start:hover{background:#ffe1ad}}
+.match-hud{position:absolute;z-index:1;top:max(12px,calc(env(safe-area-inset-top) + 6px));left:max(14px,calc(env(safe-area-inset-left) + 8px));display:grid;grid-template-areas:"score" "status";gap:5px;pointer-events:none}
 .score{grid-area:score;display:flex;align-items:stretch;overflow:hidden;width:max-content;background:var(--panel-deep);border:1px solid #60737a;border-radius:9px;box-shadow:0 3px 10px #0b20284d}
 .score-line{display:flex;align-items:center;gap:10px;padding:7px 12px;border-bottom:3px solid transparent;border-image:linear-gradient(90deg,var(--mint) 50%,var(--coral) 50%) 1}
 .team,.clock-label,.stage,.replay-caption b,.meter-title{font:750 .69rem/1.1 var(--body);text-transform:uppercase;letter-spacing:.07em}
@@ -46,19 +59,26 @@ header{justify-content:space-between;gap:8px;margin-bottom:12px}
 .notice{grid-area:status;display:flex;align-items:center;gap:7px;width:fit-content;max-width:100%;min-height:25px;padding:4px 10px;border-radius:5px;background:var(--panel-deep);color:var(--text);font-size:.78rem;font-weight:650;line-height:1.18}
 .notice::before{content:"";width:7px;height:7px;flex:none;border-radius:50%;background:var(--gold)}
 .notice[data-team="mint"]::before{background:var(--mint)}.notice[data-team="coral"]::before{background:var(--coral)}
-#power{grid-area:meter;justify-self:end;width:clamp(143px,16vw,178px);padding:8px 11px;background:var(--panel-deep);border:1px solid var(--line);border-radius:8px}
+#power{grid-area:status;justify-self:start;width:100%;padding:8px 11px;background:var(--panel-deep);border:1px solid var(--line);border-radius:8px}
+.match-hud.is-charging .notice{display:none}
 .meter-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.meter-title{color:var(--text);font-size:.66rem}
 #power-value{font:700 .83rem/1 var(--numbers);color:var(--gold)}
 .track,.replay-track{display:block;overflow:hidden;border-radius:2px;background:#425761}
 .track{height:6px;margin:5px 0}.track i,.replay-track i{display:block;width:100%;height:100%;background:var(--gold);transform:scaleX(0);transform-origin:left}
 #curl{color:var(--muted);font-size:.75rem;line-height:1.15}
-.overlay{position:absolute;z-index:3;inset:0;display:flex;align-items:safe center;overflow:auto;padding:clamp(16px,4.6%,58px);background:linear-gradient(90deg,#0a1b24ed 0%,#0d202bd9 24%,#10243277 48%,transparent 78%)}
-.card{width:min(94%,410px);text-align:left}.stage{margin:0 0 9px;color:var(--gold);font-size:.76rem;letter-spacing:.1em}
-.call{margin:0;color:#fff5dd;font:800 clamp(2.1rem,5.1vw,4.4rem)/1.02 var(--display);letter-spacing:-.028em;text-wrap:balance}
-.detail{margin:12px 0 17px;max-width:32ch;color:#f7f1e2;font-size:clamp(.9rem,1.55vw,1.06rem);line-height:1.42}
-.start{display:inline-flex;align-items:center;gap:15px;min-height:44px;padding:8px 17px;border-radius:7px;background:var(--gold);color:var(--ink);font-size:.97rem;font-weight:800}
-.start::after{content:"";width:7px;height:7px;border-top:2px solid;border-right:2px solid;transform:rotate(45deg)}
-body[data-screen="end"] .call,body[data-screen="pause"] .call{font-size:clamp(1.9rem,4.5vw,3.6rem)}
+.overlay{position:absolute;z-index:3;inset:0;display:flex;align-items:safe flex-end;overflow:auto;overscroll-behavior:contain;padding:max(76px,calc(env(safe-area-inset-top) + 64px)) max(22px,calc(env(safe-area-inset-right) + 14px)) max(clamp(22px,6vh,70px),calc(env(safe-area-inset-bottom) + 16px)) max(clamp(22px,6vw,98px),calc(env(safe-area-inset-left) + 16px));background:linear-gradient(90deg,#07181de3,transparent 70%),linear-gradient(0deg,#081d22df,transparent 60%)}
+.card{width:min(100%,475px);text-align:left}.stage{margin:0 0 10px;color:var(--gold);font-weight:800;letter-spacing:.14em}
+.call{margin:0;color:#fff5dd;font:italic 900 clamp(2.6rem,7vw,6rem)/.92 var(--display);letter-spacing:-.045em;text-wrap:balance}
+body[data-screen="menu"] .call{text-transform:uppercase;max-width:7ch;text-shadow:0 3px 14px #071b265e}
+.detail{margin:14px 0 18px;max-width:38ch;color:#f3f3e6;font-size:clamp(.94rem,1.6vw,1.08rem)}
+.card-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.start,.help-toggle,.replay-skip{border-radius:28px}
+.start{display:inline-flex;align-items:center;justify-content:center;gap:20px;min-height:52px;padding:9px 24px;background:var(--gold);color:var(--ink);font-weight:850;box-shadow:0 3px 12px #06192055}
+.start::after{content:"";width:8px;height:8px;border-top:2px solid;border-right:2px solid;transform:rotate(45deg)}
+.help-toggle,.replay-skip{padding:0 17px}
+.control-guide{margin-top:12px;padding:12px 15px;max-width:46ch;border-left:3px solid var(--mint);border-radius:2px 12px 12px 2px;background:#0c242bf0;color:#e8f1ea;font-size:.89rem;line-height:1.45}
+.control-guide p{margin:0}.control-guide p+p{margin-top:6px}
+body[data-screen="end"] .call,body[data-screen="pause"] .call{font:800 clamp(2rem,5vw,3.8rem)/1.04 var(--display);letter-spacing:-.025em}
 .result-table{width:min(100%,275px);margin:0 0 14px;border-spacing:0;border-collapse:collapse;font-size:.85rem;background:#10242deb}
 .result-table th,.result-table td{padding:4px 9px;border-bottom:1px solid #465a61;font-variant-numeric:tabular-nums}
 .result-table th{text-align:left}.result-table thead th:not(:first-child),.result-table td{text-align:right}
@@ -68,7 +88,7 @@ body[data-screen="end"] .call,body[data-screen="pause"] .call{font-size:clamp(1.
 .replay-caption b{color:var(--gold);white-space:nowrap}.replay-caption span{font-size:.82rem;font-weight:650;line-height:1.2}
 .replay-track{grid-column:1/-1;height:3px}.replay-skip{pointer-events:auto;flex:none}
 .mobile{position:absolute;z-index:2;left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));display:none;align-items:flex-end;justify-content:space-between;gap:4px;pointer-events:none;user-select:none;-webkit-user-select:none}
-.stick{--pad-size:clamp(96px,27vw,122px);display:grid;place-items:center;position:relative;flex:none;width:var(--pad-size);height:var(--pad-size);touch-action:none;border:1px solid #c3f6e6b8;border-radius:50%;background:radial-gradient(circle at center,#193c46b3 0 36%,#12313bd9 37% 39%,#173642b8 40%);box-shadow:0 3px 10px #132b3659;pointer-events:auto}
+.stick{--pad-size:clamp(100px,26vw,135px);display:grid;place-items:center;position:relative;flex:none;width:var(--pad-size);height:var(--pad-size);touch-action:none;border:1px solid #c3f6e6b8;border-radius:50%;background:radial-gradient(circle at center,#193c46b3 0 36%,#12313bd9 37% 39%,#173642b8 40%);box-shadow:0 3px 10px #132b3659;pointer-events:auto}
 .nub{position:relative;z-index:1;width:24%;height:24%;border:1px solid #cbf9e8;border-radius:50%;background:#85d8be;box-shadow:0 2px 5px #142c36a3;pointer-events:none}
 .direction{position:absolute;display:grid;place-items:center;width:44px;height:44px;padding:0;background:transparent;color:#f4fff7;touch-action:none;-webkit-tap-highlight-color:transparent}
 .direction::after{content:"";width:8px;height:8px;border-top:3px solid currentColor;border-right:3px solid currentColor;transform:rotate(var(--turn))}
@@ -77,55 +97,47 @@ body[data-screen="end"] .call,body[data-screen="pause"] .call{font-size:clamp(1.
 .direction[data-dir="left"]{--turn:-135deg;left:0;top:50%;transform:translateY(-50%)}
 .direction[data-dir="right"]{--turn:45deg;right:0;top:50%;transform:translateY(-50%)}
 .direction:active{color:var(--gold)}
-.actions{display:grid;grid-template-columns:clamp(55px,8vw,69px) clamp(45px,7vw,61px) clamp(54px,10vw,70px);grid-template-areas:"step feint shoot" "pass dash shoot";gap:8px;align-items:center}
-.action{position:relative;display:grid;place-items:center;min-width:0;min-height:44px;padding:0 2px;overflow:hidden;touch-action:none;background:#152e38f5;color:var(--text);border:1px solid #a1b8b6;border-radius:12px;font-size:clamp(.73rem,2.8vw,.84rem);font-weight:700;line-height:1.1;pointer-events:auto;-webkit-tap-highlight-color:transparent}
-#stepover{grid-area:step}#feint{grid-area:feint}#pass{grid-area:pass}#dash{grid-area:dash}
+.actions{display:grid;grid-template-columns:var(--skill-size) var(--skill-size) var(--shot-size);grid-template-areas:"step feint shoot" "pass dash shoot";gap:8px;align-items:center}
+.action{position:relative;display:grid;place-items:center;width:100%;aspect-ratio:1;min-width:0;min-height:48px;padding:0 1px;overflow:hidden;touch-action:none;background:#112b33d9;color:var(--text);border:1px solid #b9dfd5ba;border-radius:50%;box-shadow:inset 0 0 0 3px #c3e3da16,0 2px 6px #0b26324a;font-size:clamp(.7rem,2.6vw,.85rem);font-weight:700;line-height:1.1;pointer-events:auto}
+#stepover{grid-area:step;font-size:.76rem}#feint{grid-area:feint}#pass{grid-area:pass}#dash{grid-area:dash}
 #stepover:enabled,#feint:enabled{color:var(--mint);border-color:#8bc4b0}
 #shoot{grid-area:shoot;aspect-ratio:1;border-radius:50%;background:var(--gold);color:var(--ink);border:2px solid #ffe6b6;font-size:clamp(.88rem,3.4vw,1.05rem)}
 #shoot.defending{background:var(--mint);border-color:#d8fff0}.action:disabled,#shoot:disabled{background:#22353cf0;border-color:#829693;color:#c4d0cd}
 .action:enabled:active,#shoot.is-held{box-shadow:inset 0 0 0 3px #ffffff78}
 .mobile.recovering #dash::after,.mobile.recovering #shoot.defending::after{content:"";position:absolute;left:15%;right:15%;bottom:6px;height:3px;border-radius:2px;background:var(--mint);transform:scaleX(var(--dash-ready,0));transform-origin:left}
-footer{justify-content:space-between;align-items:flex-start;gap:12px 22px;margin-top:14px}.venue{margin:0;color:var(--text);font:italic 700 clamp(1rem,2vw,1.32rem)/1.2 Georgia,serif}.sub{margin:4px 0 0;color:var(--muted);font-size:.84rem;line-height:1.5}
-.keys{color:#e5eeea;font-size:.84rem;text-align:right}.key-row{justify-content:flex-end;flex-wrap:wrap;gap:6px 14px;font-weight:600}.key-row span{white-space:nowrap}
-kbd{display:inline-block;padding:1px 5px;background:#223942;border:1px solid #637b7e;border-radius:4px;color:var(--text);font:650 .75rem/1.45 var(--numbers)}
-.keys details{margin-top:6px}.keys summary{width:fit-content;margin-left:auto;min-height:28px;color:var(--mint);line-height:1.7}.keys details p{max-width:66ch;margin:4px 0;font-size:.83rem;line-height:1.65}
+.keys kbd{font:700 .8rem var(--numbers);color:var(--gold)}
 .touch-guide{display:none}.live{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 @media(any-pointer:coarse),(max-width:700px){
- body{min-height:0;overscroll-behavior:none}
- main{display:grid;grid-template-rows:auto minmax(0,1fr);gap:4px;width:100%;max-width:none;height:100vh;height:100dvh;padding:max(4px,env(safe-area-inset-top)) 0 0}
- header{margin:0;padding:0 max(9px,env(safe-area-inset-right)) 0 max(9px,env(safe-area-inset-left))}.tool{padding:0 10px;font-size:.82rem}
- .arena{width:100%;height:100%;min-height:0;aspect-ratio:auto;border-width:1px 0 0;border-radius:0;box-shadow:none}
- footer{display:none}
- .mobile{display:flex;left:max(12px,calc(env(safe-area-inset-left) + 8px));right:max(12px,calc(env(safe-area-inset-right) + 8px));bottom:max(14px,calc(env(safe-area-inset-bottom) + 8px));-webkit-touch-callout:none}
- .stick{--pad-size:clamp(96px,27vw,132px)}.actions{grid-template-columns:clamp(58px,16vw,74px) clamp(48px,13vw,62px) clamp(60px,16vw,76px);gap:clamp(6px,1.8vw,9px)}
- .action{min-height:48px}.arena canvas{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
- .card{width:min(86%,365px)}.overlay{padding:14px max(18px,calc(env(safe-area-inset-right) + 12px)) max(18px,calc(env(safe-area-inset-bottom) + 12px)) max(18px,calc(env(safe-area-inset-left) + 12px));background:linear-gradient(90deg,#0b1f29f0,#0d222cbf 48%,#10243225)}
- body[data-screen="menu"] .touch-guide,body[data-screen="pause"] .touch-guide{display:block;max-width:38ch;margin:0 0 15px;color:#d5e8e4;font-size:.89rem;line-height:1.4}
+ .mobile{display:flex;--skill-size:clamp(56px,14vw,64px);--shot-size:clamp(58px,17vw,82px);left:max(12px,calc(env(safe-area-inset-left) + 10px));right:max(12px,calc(env(safe-area-inset-right) + 10px));bottom:max(16px,calc(env(safe-area-inset-bottom) + 10px));-webkit-touch-callout:none}
+ .control-guide .keys{display:none}.control-guide .touch-guide{display:block}
 }
 @media(max-width:520px){
- .match-hud{inset:8px max(9px,env(safe-area-inset-right)) auto max(9px,env(safe-area-inset-left));grid-template-columns:auto 1fr;grid-template-areas:"score ." "status .";gap:4px}
- .score-line{gap:7px;padding:5px 8px}.clock-box{min-width:65px;padding:4px 6px}.team{font-size:.72rem}
- #power{grid-area:status;justify-self:start;width:100%;padding:5px 9px}.match-hud.is-charging .notice{display:none}
- .brand{gap:6px}.mark{width:28px;height:30px;font-size:21px}.tools{gap:5px}
- .replay-caption{gap:4px;padding:6px 8px}.replay-caption span{font-size:.76rem}.replay-skip{padding:0 9px;font-size:.8rem}
+ .match-hud{left:max(10px,calc(env(safe-area-inset-left) + 5px));gap:4px}
+ .score-line{gap:6px;padding:5px 8px}.clock-box{min-width:60px;padding:4px 6px}.team{font-size:.72rem}
+ #power{padding:5px 9px}.tools{right:max(10px,calc(env(safe-area-inset-right) + 5px));gap:6px}
+ .replay-caption{gap:4px;padding:7px 9px}.replay-caption span{font-size:.79rem}
 }
-@media(orientation:portrait) and (any-pointer:coarse),(orientation:portrait) and (max-width:700px){
- .overlay{align-items:flex-end;align-items:safe flex-end;background:linear-gradient(0deg,#0b1c25 0%,#10232bef 24%,#10243065 52%,transparent 72%)}
- .card{width:min(100%,430px);padding:5px 2px 8px}.call{font-size:clamp(2rem,8.4vw,3.4rem)}.detail{margin:8px 0 10px}
+@media(orientation:portrait){
+ .overlay{padding-left:max(22px,calc(env(safe-area-inset-left) + 14px));padding-bottom:max(32px,calc(env(safe-area-inset-bottom) + 22px));background:linear-gradient(0deg,#081b22fa 0%,#10252cdd 23%,#10243050 50%,transparent 72%)}
+ .call{font-size:clamp(2.8rem,13vw,5.4rem)}
 }
-@media(max-height:540px) and (orientation:landscape) and (any-pointer:coarse){
- main{gap:2px;padding-top:max(2px,env(safe-area-inset-top))}.mark{width:29px;height:29px;font-size:21px}
- .match-hud{inset:7px max(10px,env(safe-area-inset-right)) auto max(10px,env(safe-area-inset-left))}.stick{--pad-size:clamp(96px,26vh,112px)}
- .overlay{padding-top:9px;padding-bottom:max(9px,env(safe-area-inset-bottom))}.card{width:min(70%,365px)}.stage{margin-bottom:4px}.call,body[data-screen="end"] .call,body[data-screen="pause"] .call{font-size:clamp(1.65rem,4vw,2.25rem)}
- .detail{margin:5px 0 8px}.result-table{margin-bottom:8px}.result-table th,.result-table td{padding:2px 7px}
- body[data-screen="menu"] .touch-guide,body[data-screen="pause"] .touch-guide{margin-bottom:9px;font-size:.83rem}
+@media(max-height:540px) and (orientation:landscape){
+ .overlay{padding-top:max(12px,env(safe-area-inset-top));padding-bottom:max(14px,calc(env(safe-area-inset-bottom) + 7px));padding-right:max(122px,calc(env(safe-area-inset-right) + 116px))}
+ .call{font-size:clamp(2.3rem,7.8vh,3.4rem)}.card{max-width:390px}.stage{margin-bottom:5px}
+ .detail{margin:8px 0 12px}.control-guide{margin-top:8px}.result-table{margin-bottom:8px}.result-table th,.result-table td{padding:2px 7px}
+ .stick{--pad-size:clamp(98px,26vh,124px)}.mobile{--skill-size:clamp(56px,14vh,64px);--shot-size:clamp(62px,19vh,78px)}
 }
-@media(min-width:701px) and (max-height:550px) and (not (any-pointer:coarse)){.arena{aspect-ratio:auto;height:max(255px,calc(100vh - 140px))}}
+@media(max-width:345px){.mobile{left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));--skill-size:56px;--shot-size:56px}.stick{--pad-size:96px}.actions{gap:6px}}
 @media(prefers-reduced-motion:no-preference){.tool,.action,.start,.replay-skip{transition:background-color .15s ease-out,border-color .15s ease-out}}
 </style>
 <body data-screen="menu"><main>
- <header><div class="brand"><span class="mark" aria-hidden="true">C</span><b>Chhad League</b></div><div class="tools"><button type="button" class="tool" id="sound" aria-pressed="false">Sound off</button><button type="button" class="tool" id="pause" disabled>Pause</button></div></header>
  <section class="arena" aria-label="Football match">
+ <div class="tools" role="group" aria-label="Game settings">
+  <button type="button" class="tool" id="sound" aria-pressed="false" aria-label="Sound" title="Sound off"><span aria-hidden="true" class="tool-glyph"></span></button>
+  <button type="button" class="tool" id="fullscreen" aria-label="Enter full screen" title="Enter full screen" hidden><span aria-hidden="true" class="tool-glyph"></span></button>
+  <button type="button" class="tool" id="pause" aria-label="Pause" title="Pause" hidden><span aria-hidden="true" class="tool-glyph"></span></button>
+ </div>
+ <p class="view-status" id="view-status" role="status" hidden></p>
  <canvas id="pitch" tabindex="0" width="1100" height="595" aria-label="Dhaka rooftop football pitch. Mint attacks the goal on the right."></canvas>
  <div class="match-hud" id="match-hud" hidden>
   <div class="score" role="group" aria-label="Match score and time">
@@ -148,7 +160,7 @@ kbd{display:inline-block;padding:1px 5px;background:#223942;border:1px solid #63
    <span class="nub" id="nub" aria-hidden="true"></span>
   </div>
   <div class="actions">
-   <button type="button" class="action" id="stepover">Stepover</button>
+   <button type="button" class="action" id="stepover" aria-label="Stepover"><span>Step<wbr>over</span></button>
    <button type="button" class="action" id="feint" aria-label="Body feint">Feint</button>
    <button type="button" class="action" id="pass">Pass</button>
    <button type="button" class="action" id="dash">Dash</button>
@@ -157,25 +169,27 @@ kbd{display:inline-block;padding:1px 5px;background:#223942;border:1px solid #63
  </div>
  <div class="replay-bar" id="replay-bar" hidden><div class="replay-caption"><b>Replay · ½×</b><span id="replay-event"></span><span class="replay-track" aria-hidden="true"><i id="replay-fill"></i></span></div><button type="button" class="replay-skip" id="skip-replay" title="Skip replay (Enter)">Skip replay</button></div>
  <div class="overlay" id="overlay" role="group" aria-labelledby="heading"><div class="card">
-  <p class="stage" id="card-stage">Mint vs Coral</p>
-  <h1 class="call" id="heading">Rooftop derby</h1>
+  <p class="stage" id="card-stage">Old Dhaka rooftops</p>
+  <h1 class="call" id="heading">Chhad League</h1>
   <p class="detail" id="detail">Play as Mint. Attack the goal on the right and outscore Coral in 90 seconds.</p>
-  <p class="touch-guide" id="touch-guide"></p>
   <table class="result-table" id="match-summary" aria-label="Full-time team statistics" hidden>
    <thead><tr><th scope="col">Match stats</th><th scope="col" class="home">Mint</th><th scope="col" class="away">Coral</th></tr></thead>
    <tbody><tr><th scope="row">Shots</th><td id="mint-shots">0</td><td id="coral-shots">0</td></tr><tr><th scope="row">Keeper saves</th><td id="mint-saves">0</td><td id="coral-saves">0</td></tr></tbody>
   </table>
-  <button type="button" class="start" id="start">Kick off</button>
+  <div class="card-actions">
+   <button type="button" class="start" id="start">Kick off</button>
+   <button type="button" class="help-toggle" id="help-toggle" aria-expanded="false" aria-controls="control-guide">Controls</button>
+  </div>
+  <div class="control-guide" id="control-guide" hidden>
+   <p class="touch-guide" id="touch-guide"></p>
+   <div class="keys">
+    <p><kbd>WASD</kbd> or arrows to move. Tap <kbd>Space</kbd> to shoot or tackle. Hold for power, aim with up or down, and curl with <kbd>Z</kbd> / <kbd>C</kbd>.</p>
+    <p><kbd>F</kbd>, <kbd>X</kbd> or <kbd>Enter</kbd> to pass or switch. <kbd>Shift</kbd> to dash. <kbd>Q</kbd> for a stepover, <kbd>E</kbd> for a body feint. <kbd>Esc</kbd> to pause.</p>
+    <p>With a mouse, hold and drag up or down on the pitch to curl a shot.</p>
+   </div>
+  </div>
  </div></div>
  </section>
- <footer><div><p class="venue">Old Dhaka Rooftops</p><p class="sub">Three-a-side · Two outfield players and a keeper</p></div>
-  <div class="keys">
-   <div class="key-row"><span><kbd>WASD</kbd> / <kbd>↑↓←→</kbd> Move</span><span><kbd>Space</kbd> Shoot / Tackle</span><span><kbd>F</kbd> Pass / Switch</span></div>
-   <details><summary>More controls</summary><p>Tap Space to shoot. Hold for power and steer up or down to pick a post.<br>
-    <kbd>Z</kbd> / <kbd>C</kbd> Curl far / near · <kbd>Shift</kbd> Dash · <kbd>Q</kbd> Stepover · <kbd>E</kbd> Body feint<br>
-    <kbd>X</kbd> or <kbd>Enter</kbd> also passes or switches. Hold and drag vertically on the pitch to curl a shot with the mouse. <kbd>Esc</kbd> pauses.</p></details>
-  </div>
- </footer>
  <div id="live" role="status" aria-atomic="true" class="live"></div>
 </main>
 <script>
@@ -691,7 +705,9 @@ function setScreen(next){
  hud.root.hidden=next==='menu'||next==='pause'||next==='end';
  hud.touch.hidden=next!=='play';hud.replay.hidden=next!=='replay';hud.notice.hidden=next==='replay';
  hud.overlay.hidden=true;hud.summary.hidden=next!=='end';
- $('pause').disabled=next==='end'||next==='menu';$('pause').textContent=next==='pause'?'Resume':'Pause';
+ $('pause').hidden=next!=='play'&&next!=='goal'&&next!=='replay';
+ $('view-status').hidden=true;
+ $('control-guide').hidden=true;$('help-toggle').setAttribute('aria-expanded','false');
  if(next==='play'||next==='goal'){updateControls();updatePossession()}
 }
 function updateClock(){
@@ -722,9 +738,9 @@ function kickoffCue(){return portraitPitch.matches?'Mint kick off · Attack up':
 function updateViewCopy(){
  const portrait=portraitPitch.matches;
  canvas.setAttribute('aria-label','Dhaka rooftop football pitch. Mint attacks the goal '+(portrait?'at the top.':'on the right.'));
- if(mode==='menu')$('detail').textContent=touchLayout.matches?'Play as Mint and outscore Coral in 90 seconds.':'Play as Mint. Attack the goal on the right and outscore Coral in 90 seconds.';
+ if(mode==='menu')$('detail').textContent='Mint vs Coral · 90 seconds. You play as Mint.';
  const guide=$('touch-guide');
- guide.hidden=mode==='pause'&&!!replay;
+
  guide.textContent=(portrait?'Drag the pad up to attack. Tap Shoot, or hold and swipe left or right to curl.':'Drag the pad right to attack. Tap Shoot, or hold and swipe up or down to curl.')+
    (mode==='pause'?' Without the ball, tap Switch or Tackle.':'');
  if(flash>0&&message.startsWith('Mint kick off ·')){message=kickoffCue();updatePossession()}
@@ -1136,8 +1152,50 @@ function bindTap(id,activate){
  };
  button.onclick=e=>{if(!handledTouch||e.detail===0)activate()};
 }
-bindTap('start',()=>mode==='pause'?pause():begin());bindTap('pause',pause);bindTap('skip-replay',exitReplay);
-$('sound').onclick=e=>{try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();audio.resume();sound=!sound;$('sound').textContent=sound?'Sound on':'Sound off';$('sound').setAttribute('aria-pressed',String(sound));beep(530)}catch{}if(e.detail&&mode==='play')canvas.focus({preventScroll:true})};
+const fullscreenButton=$('fullscreen'),root=document.documentElement,appFullscreen=matchMedia('(display-mode: fullscreen)');
+function fullscreenElement(){return document.fullscreenElement||document.webkitFullscreenElement}
+function canEnterFullscreen(){return !!((document.fullscreenEnabled&&root.requestFullscreen)||(document.webkitFullscreenEnabled&&root.webkitRequestFullscreen))}
+let hadFullscreen=!!fullscreenElement(),fullscreenPending=false;
+function syncFullscreen(){
+ const active=!!fullscreenElement();
+ fullscreenButton.hidden=!canEnterFullscreen()||(!active&&appFullscreen.matches);
+ const label=active?'Exit full screen':'Enter full screen';
+ fullscreenButton.setAttribute('aria-label',label);fullscreenButton.title=label;
+ if(active)$('view-status').hidden=true;
+ if(hadFullscreen&&!active&&(mode==='play'||mode==='goal'||mode==='replay'))pause();
+ hadFullscreen=active;
+}
+async function changeFullscreen(enter,manual=false){
+ if(fullscreenPending||!canEnterFullscreen()||(enter&&(fullscreenElement()||appFullscreen.matches)))return;
+ fullscreenPending=true;
+ try{
+   if(enter){
+     if(root.requestFullscreen)await root.requestFullscreen({navigationUI:'hide'});
+     else await root.webkitRequestFullscreen();
+   }else if(document.exitFullscreen)await document.exitFullscreen();
+   else await document.webkitExitFullscreen();
+ }catch{
+   if(manual){
+     const message=$('view-status');message.textContent='Open the game directly in your browser to use full screen.';message.hidden=false;
+   }
+ }finally{fullscreenPending=false;syncFullscreen()}
+}
+document.addEventListener('fullscreenchange',syncFullscreen);
+document.addEventListener('webkitfullscreenchange',syncFullscreen);
+appFullscreen.addEventListener('change',syncFullscreen);
+syncFullscreen();
+bindTap('fullscreen',()=>{void changeFullscreen(!fullscreenElement(),true)});
+bindTap('start',()=>{
+ if(mode==='pause'){pause();return}
+ if(touchLayout.matches)void changeFullscreen(true);
+ begin();
+});
+bindTap('help-toggle',()=>{
+ const guide=$('control-guide');guide.hidden=!guide.hidden;
+ $('help-toggle').setAttribute('aria-expanded',String(!guide.hidden));
+});
+bindTap('pause',pause);bindTap('skip-replay',exitReplay);
+$('sound').onclick=e=>{try{if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();audio.resume();sound=!sound;$('sound').title=sound?'Sound on':'Sound off';$('sound').setAttribute('aria-pressed',String(sound));beep(530)}catch{}if(e.detail&&mode==='play')canvas.focus({preventScroll:true})};
 const keyActions={
  Space:shootOrTackle,KeyF:pass,KeyX:pass,Enter:pass,NumpadEnter:pass,
  ShiftLeft:dash,ShiftRight:dash,KeyQ:()=>startSkill('stepover'),KeyE:()=>startSkill('feint')
@@ -1222,9 +1280,9 @@ bindTap('pass',pass);bindTap('dash',dash);
 portraitPitch.addEventListener('change',()=>{resetInput();paintedCurl=null;updateViewCopy()});
 touchLayout.addEventListener('change',updateViewCopy);
 updateViewCopy();
-window.addEventListener('blur',()=>{if(mode==='play'||mode==='goal'||mode==='replay')pause();else resetInput()});
+window.addEventListener('blur',()=>{if(fullscreenPending&&!document.hidden)return;if(mode==='play'||mode==='goal'||mode==='replay')pause();else resetInput()});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&(mode==='play'||mode==='goal'||mode==='replay'))pause()});
-if(document.activeElement===document.body)$('start').focus({preventScroll:true});
+if(!touchLayout.matches&&document.activeElement===document.body)$('start').focus({preventScroll:true});
 </script>
 </body>
 </html>
