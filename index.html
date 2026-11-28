@@ -4,7 +4,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#101c23">
 <meta name="application-name" content="Chhad League">
-<meta name="application-version" content="1.2.2">
+<meta name="application-version" content="1.3.0">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -72,6 +72,22 @@ body:is([data-screen="play"],[data-screen="goal"],[data-screen="replay"]) #fulls
 body[data-screen="menu"] .call{text-transform:uppercase;max-width:7ch;text-shadow:0 3px 14px #071b265e}
 .detail{margin:14px 0 18px;max-width:38ch;color:#f3f3e6;font-size:clamp(.94rem,1.6vw,1.08rem)}
 .card-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.control-settings{display:flex;align-items:flex-start;flex-wrap:wrap;gap:0 14px}
+.control-settings .replay-setting{flex-wrap:wrap;gap:5px}
+.hand-setting{min-height:44px;cursor:pointer}
+.hand-setting input{width:21px;height:21px;margin:0 4px 0 0;accent-color:var(--mint)}
+#lab-readout{grid-area:score;padding:8px 11px;max-width:min(330px,calc(100vw - 100px));border:1px solid #60737a;border-radius:8px;background:var(--panel-deep)}
+#lab-progress{display:block;color:var(--mint);font-size:.71rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+#lab-name{display:block;font-size:1.05rem}#lab-hint{margin:3px 0 0;color:var(--text);font-size:.82rem;line-height:1.25}
+body[data-session="lab"] :is(.score,#notice,#stepover,#feint,#pass,#dash){display:none}
+body[data-session="lab"] .replay-choice{display:none}
+body[data-session="lab"] .actions{grid-template-columns:var(--shot-size);grid-template-areas:"shoot"}
+body[data-hand="left"] .mobile{flex-direction:row-reverse}
+body[data-hand="left"]:not([data-session="lab"]) .actions{grid-template-columns:var(--shot-size) var(--skill-size) var(--skill-size);grid-template-areas:"shoot feint step" "shoot dash pass"}
+.replay-setting{display:flex;align-items:center;gap:10px;width:fit-content;max-width:100%;margin-top:10px;color:var(--text);font-size:.9rem;font-weight:700}
+.replay-setting select{min-width:0;min-height:44px;padding:5px 8px;border:1px solid #b9dfd566;border-radius:8px;background:#11262d;color:var(--text);color-scheme:dark;font:inherit}
+.replay-setting select:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+body[data-screen="end"] .replay-setting{display:none}
 .start,.help-toggle,.replay-skip{border-radius:28px}
 .start{display:inline-flex;align-items:center;justify-content:center;gap:20px;min-height:52px;padding:9px 24px;background:var(--gold);color:var(--ink);font-weight:850;box-shadow:0 3px 12px #06192055}
 .start::after{content:"";width:8px;height:8px;border-top:2px solid;border-right:2px solid;transform:rotate(45deg)}
@@ -130,7 +146,7 @@ body[data-screen="end"] .call,body[data-screen="pause"] .call{font:800 clamp(2re
 @media(max-width:345px){.mobile{left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));--skill-size:56px;--shot-size:56px}.stick{--pad-size:96px}.actions{gap:6px}}
 @media(prefers-reduced-motion:no-preference){.tool,.action,.start,.replay-skip{transition:background-color .15s ease-out,border-color .15s ease-out}}
 </style>
-<body data-screen="menu"><main>
+<body data-screen="menu" data-hand="right" data-session="match"><main>
  <section class="arena" aria-label="Football match">
  <div class="tools" role="group" aria-label="Game settings">
   <button type="button" class="tool" id="sound" aria-pressed="false" aria-label="Sound" title="Sound off"><span aria-hidden="true" class="tool-glyph"></span></button>
@@ -140,6 +156,7 @@ body[data-screen="end"] .call,body[data-screen="pause"] .call{font:800 clamp(2re
  <p class="view-status" id="view-status" role="status" hidden></p>
  <canvas id="pitch" tabindex="0" width="1100" height="595" aria-label="Dhaka rooftop football pitch. Mint attacks the goal on the right."></canvas>
  <div class="match-hud" id="match-hud" hidden>
+  <div id="lab-readout" hidden><span id="lab-progress"></span><strong id="lab-name"></strong><p id="lab-hint" role="status"></p></div>
   <div class="score" role="group" aria-label="Match score and time">
    <div class="score-line"><span class="team home">Mint</span><strong id="goals">0–0</strong><span class="team away">Coral</span></div>
    <div class="clock-box" id="clock-box"><span class="clock-label" id="clock-label">Time left</span><span class="clock" id="clock" role="timer" aria-labelledby="clock-label">1:30</span></div>
@@ -177,8 +194,20 @@ body[data-screen="end"] .call,body[data-screen="pause"] .call{font:800 clamp(2re
    <tbody><tr><th scope="row">Shots</th><td id="mint-shots">0</td><td id="coral-shots">0</td></tr><tr><th scope="row">Keeper saves</th><td id="mint-saves">0</td><td id="coral-saves">0</td></tr></tbody>
   </table>
   <div class="card-actions">
-   <button type="button" class="start" id="start">Kick off</button>
+   <button type="button" class="start" id="start">Quick Match</button>
+   <button type="button" class="help-toggle" id="start-lab">Shot Lab</button>
+   <button type="button" class="help-toggle" id="leave-lab" hidden>Main menu</button>
    <button type="button" class="help-toggle" id="help-toggle" aria-expanded="false" aria-controls="control-guide">Controls</button>
+  </div>
+  <div class="control-settings">
+  <label class="replay-setting replay-choice" for="replay-mode">Instant replays
+   <select id="replay-mode">
+    <option value="highlights">Highlights (up to 3)</option>
+    <option value="all">All goals &amp; diving saves</option>
+    <option value="off">Off</option>
+   </select>
+  </label>
+  <label class="replay-setting hand-setting" for="hand-mode"><input id="hand-mode" type="checkbox" role="switch">Left-handed controls</label>
   </div>
   <div class="control-guide" id="control-guide" hidden>
    <p class="touch-guide" id="touch-guide"></p>
@@ -592,8 +621,18 @@ function createStadium(canvas) {
     camera=mix(camera,eye,ease);look=mix(look,target,ease);wasReplay=!!reel;wasMenu=menu;wasPortrait=portrait;
     const forward=unit(v(look,camera)),right=unit(cross(forward,[0,1,0])),up=cross(right,forward),f=1/Math.tan((menu?46:reel?49:54)*Math.PI/360);
     mesh=[];posedActors.length=0;
+    if(state.lab && (state.lab.drill===1 || state.lab.drill===2)){
+      const side=state.lab.drill===1?-1:1;
+      const x=worldX(W)-.04, inner=side*labTargetEdge*.04, outer=side*GOAL*.04;
+      const middle=(inner+outer)/2, width=Math.abs(outer-inner);
+      box(x,.09,inner,.09,1.85,.09,'#f8c965');
+      box(x,.09,outer,.09,1.85,.09,'#f8c965');
+      box(x,.09,middle,.09,.09,width,'#f8c965');
+      box(x,1.94,middle,.09,.09,width,'#f8c965');
+    }
     for(let i=0;i<kits.length;i++){
       const kit=kits[i],bones=kit.bones,keeper=i>=players.length;
+      if(state.lab && i!==active && !(state.lab.drill===3 && i===players.length+1))continue;
       if(reel){
         const a=reel.a.rigs[i],b=reel.b.rigs[i];
         for(let j=0;j<bones.length;j++)bones[j]=a[j]+(b[j]-a[j])*reel.blend;
@@ -643,6 +682,8 @@ const keys=new Set();let joy={x:0,y:0},stickId=null,nudgeLeft=0,audio=null,sound
 const quickShotPower=.50,dashCooldown=2.1;
 const teamNames=['Mint','Coral'];
 const matchTally={shots:[0,0],saves:[0,0]};
+const labTargetEdge=23;
+let lab=null;
 const hud={
  root:$('match-hud'),score:$('goals'),clock:$('clock'),clockBox:$('clock-box'),clockLabel:$('clock-label'),notice:$('notice'),
  power:$('power'),powerValue:$('power-value'),track:$('power-track'),fill:$('fill'),curl:$('curl'),
@@ -653,6 +694,26 @@ let noticeTeam=null,paintedPower=-1,paintedCurl=null,paintedDash=-1,paintedRepla
 const replayRate=.5,shotSampleStep=1/40,frameLimit=256;
 const recording={frames:[],pool:[],kick:null,event:null,next:0,step:shotSampleStep,keyframe:false};
 let replay=null;
+const replayMode=$('replay-mode');
+const replayPreferenceKey='chhad-league.replay-mode';
+const shownHighlights=new Set();
+try {
+ const saved=localStorage.getItem(replayPreferenceKey);
+ if(Array.from(replayMode.options).some(option=>option.value===saved))replayMode.value=saved;
+} catch { /* Storage can be unavailable in a private or embedded game. */ }
+replayMode.addEventListener('change',()=>{
+ try { localStorage.setItem(replayPreferenceKey,replayMode.value); } catch { /* Keep the selection for this session. */ }
+});
+const handMode=$('hand-mode');
+try {
+ handMode.checked=localStorage.getItem('chhad-league.touch-hand')==='left';
+} catch { /* The selector also works without storage. */ }
+document.body.dataset.hand=handMode.checked?'left':'right';
+handMode.addEventListener('change',()=>{
+ resetInput();
+ document.body.dataset.hand=handMode.checked?'left':'right';
+ try { localStorage.setItem('chhad-league.touch-hand',document.body.dataset.hand); } catch {}
+});
 
 function rotateFootball(q,dx,dz,out){
  const travel=Math.hypot(dx,dz);
@@ -670,6 +731,7 @@ function trimRecording(before){
  if(drop)recording.pool.push(...frames.splice(0,drop));
 }
 function captureFrame(force=false){
+ if(lab)return;
  if(!force&&elapsed+1e-7<recording.next)return;
  const frames=recording.frames;
  if(recording.kick===null&&!recording.event)trimRecording(elapsed-.42);
@@ -691,17 +753,32 @@ function captureFrame(force=false){
  recording.next=elapsed+(recording.kick===null&&!recording.event?1/24:recording.step);
 }
 function recordKick(){
- if(recording.event)return;
+ if(lab||recording.event)return;
  trimRecording(elapsed-.42);recording.kick=elapsed;recording.step=shotSampleStep;captureFrame(true);
 }
+function highlightFor(kind,team){
+ if(!shownHighlights.has(kind))return kind;
+ const lead=score[team]-score[1-team];
+ if(kind==='goal'&&seconds<=15&&(lead===0||lead===1)&&!shownHighlights.has('lateGoal'))return 'lateGoal';
+ return null;
+}
 function markReplay(kind,team){
- recording.event={kind,team,impact:elapsed};recording.keyframe=true;
+ const highlight=highlightFor(kind,team);
+ if(replayMode.value==='off'||(replayMode.value==='highlights'&&!highlight)){
+   recording.event=null;
+   recording.keyframe=false;
+   recording.kick=null;
+   recording.step=shotSampleStep;
+   return;
+ }
+ recording.event={kind,team,highlight,impact:elapsed};recording.keyframe=true;
 }
 function startReplay(){
  const event=recording.event,frames=recording.frames;
  captureFrame(true);
  recording.event=null;
  if(frames.length<2){if(mode==='end')showResult();return}
+ if(event.highlight)shownHighlights.add(event.highlight);
  const title=teamNames[event.team]+(event.kind==='goal'?' goal':' diving save');
  replay={kind:event.kind,goalSign:(event.team?1:-1)*(event.kind==='goal'?-1:1),resume:mode,
    start:frames[0].time,time:frames[0].time,end:frames[frames.length-1].time,index:0,ball:{rotation:new Float32Array(4)}};
@@ -731,6 +808,10 @@ function beep(freq,len=.09){if(!sound||!audio)return;const o=audio.createOscilla
 function formatTime(value){const t=Math.max(0,Math.ceil(value));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')}
 function setScreen(next){
  mode=next;document.body.dataset.screen=next;
+ document.body.dataset.session=lab?'lab':'match';
+ $('start-lab').hidden=next!=='menu' && !(next==='end'&&!lab);
+ $('leave-lab').hidden=!lab || (next!=='pause'&&next!=='end');
+ $('lab-readout').hidden=!lab;
  hud.root.hidden=next==='menu'||next==='pause'||next==='end';
  hud.touch.hidden=next!=='play';hud.replay.hidden=next!=='replay';hud.notice.hidden=next==='replay';
  hud.overlay.hidden=true;hud.summary.hidden=next!=='end';
@@ -766,6 +847,7 @@ function announce(s,t=1.1,team=null){message=s;flash=t;noticeTeam=team;updatePos
 function kickoffCue(){return portraitPitch.matches?'Mint kick off · Attack up':'Mint kick off · Attack right'}
 function updateViewCopy(){
  const portrait=portraitPitch.matches;
+ if(lab)updateLabHud();
  canvas.setAttribute('aria-label','Dhaka rooftop football pitch. Mint attacks the goal '+(portrait?'at the top.':'on the right.'));
  if(mode==='menu')$('detail').textContent='Mint vs Coral · 90 seconds. You play as Mint.';
  const guide=$('touch-guide');
@@ -775,6 +857,7 @@ function updateViewCopy(){
  if(flash>0&&message.startsWith('Mint kick off ·')){message=kickoffCue();updatePossession()}
 }
 function updateShotMeter(){
+ if(lab)updateLabHud();
  const percent=Math.round(charge*100),curlPercent=Math.abs(bend)<.06?0:Math.round(bend*100);
  if(percent!==paintedPower){
    paintedPower=percent;hud.powerValue.textContent=percent+'%';hud.track.setAttribute('aria-valuenow',String(percent));
@@ -797,6 +880,12 @@ function updateDashMeter(p){
 }
 function canDash(p){return !p.cool&&!p.strike&&!p.skill}
 function updateControls(){
+ if(lab){
+   const p=players[active];
+   hud.shoot.textContent='Shoot';hud.shoot.classList.remove('defending');
+   hud.shoot.disabled=!!(lab.feedback||lab.flying||p.strike);
+   return;
+ }
  const p=players[active],hasBall=ball.owner===active,primary=hasBall?'Shoot':'Tackle';
  if(hud.shoot.textContent!==primary){
    hud.shoot.textContent=primary;hud.shoot.classList.toggle('defending',!hasBall);hud.pass.textContent=hasBall?'Pass':'Switch';
@@ -841,7 +930,9 @@ function showCard(stage,title,detail,button){
  hud.overlay.hidden=false;$('start').focus({preventScroll:true});
 }
 function begin(){
+ lab=null;
  resetInput();score=[0,0];seconds=90;lastAttack=false;extra=0;flash=0;replay=null;
+ shownHighlights.clear();
  matchTally.shots.fill(0);matchTally.saves.fill(0);
  setScreen('play');formation(0);captureFrame(true);stats();canvas.focus({preventScroll:true});
  announce(kickoffCue(),1.15,0);beep(660);
@@ -864,10 +955,95 @@ function pause(){
  }
  if(mode!=='play'&&mode!=='goal'&&mode!=='replay')return;
  beforePause=mode;setScreen('pause');resetInput();updateViewCopy();
+ if(lab){showCard('Shot Lab','Practice paused',labInstructions(),'Resume practice');return}
  const stage=lastAttack?'Last attack · '+formatTime(extra):'Time left · '+formatTime(seconds);
  showCard(stage,replay?'Replay paused':'Match paused',`Mint ${score[0]} – ${score[1]} Coral`,replay?'Resume replay':'Resume match');
 }
 function afterGoalKickoff(){setScreen('play');formation(kickSide);announce(teamNames[kickSide]+' kick off',.8,kickSide)}
+function labTitle(){
+ if(lab.drill===1)return portraitPitch.matches?'Left corner':'Far corner';
+ if(lab.drill===2)return portraitPitch.matches?'Right corner':'Near corner';
+ return lab.drill===3?'Beat the keeper':'Open goal';
+}
+function labInstructions(){
+ if(lab.feedback)return lab.feedback;
+ if(lab.flying)return 'Watch the ball.';
+ const touch=touchLayout.matches;
+ if(lab.drill===1||lab.drill===2){
+   const negative=lab.drill===1;
+   const gesture=portraitPitch.matches?(negative?'← left':'right →'):(negative?'↑ up':'↓ down');
+   if(charging && bend*(negative?-1:1)>=.42)return 'Release to curl into the gold target.';
+   return touch?'Hold Shoot and swipe '+gesture+' into the gold target.':
+     'Hold Space and press '+(negative?'Z':'C')+' to curl into the gold target.';
+ }
+ if(charging)return lab.drill===3?'Aim for a corner and release.':'Release to shoot.';
+ if(lab.drill===3)return touch?'Hold Shoot, swipe and beat the keeper.':'Hold Space, aim with ↑ or ↓ and curl with Z or C.';
+ return touch?'Tap Shoot to score in the open goal.':'Tap Space to score in the open goal.';
+}
+function updateLabHud(){
+ if(!lab)return;
+ const title=labTitle(),hint=labInstructions(),progress='Shot Lab · '+(lab.drill+1)+' / 4';
+ if($('lab-progress').textContent!==progress)$('lab-progress').textContent=progress;
+ if($('lab-name').textContent!==title)$('lab-name').textContent=title;
+ if($('lab-hint').textContent!==hint)$('lab-hint').textContent=hint;
+}
+function resetLabBall(){
+ resetInput();formation(0);
+ const player=players[0];player.x=765;player.y=CY;player.heading=Math.PI/2;
+ if(lab.drill===3){
+   lab.keeperSide=lab.attempts%2?1:-1;
+   const keeper=keepers[1];
+   keeper.y=CY+lab.keeperSide*29;
+   poseKeeper(keeper);keeper.contacts=keeperContacts(keeper);keeper.previous=keeper.contacts;
+ }
+ lab.feedback='';lab.timer=0;lab.flying=false;lab.curl=0;lab.hit=false;
+ ball.shotAge=0;syncBall();updateControls();updateLabHud();
+}
+function beginLab(){
+ lab={drill:0,attempts:0};
+ replay=null;flash=0;lastAttack=false;
+ setScreen('play');resetLabBall();canvas.focus({preventScroll:true});
+}
+function leaveLab(){
+ resetInput();lab=null;flash=0;replay=null;
+ setScreen('menu');formation(0);showCard('Old Dhaka rooftops','Chhad League','','Quick Match');
+ updateViewCopy();syncFullscreen();
+}
+function finishLabShot(hit,message){
+ if(lab.feedback)return;
+ lab.hit=hit;lab.feedback=message;lab.timer=hit?1.05:.8;
+ updateControls();updateLabHud();beep(hit?750:230,.1);
+}
+function stepLabBall(dt){
+ if(ball.owner>=0){syncBall();return}
+ const from={x:ball.x,y:ball.y,h:ball.height+4.15};
+ fly(ball,dt);
+ if(lab.drill===3 && parryShot(from)){
+   finishLabShot(false,'Saved! Try the other corner.');return;
+ }
+ if(ball.x>=W && ball.x>from.x){
+   const fraction=clamp((W-from.x)/(ball.x-from.x),0,1);
+   const atY=from.y+(ball.y-from.y)*fraction-CY;
+   const height=from.h-4.15+(ball.height-from.h+4.15)*fraction;
+   const onGoal=Math.abs(atY)<=GOAL && height+6.9<56;
+   const side=lab.drill===1?-1:lab.drill===2?1:0;
+   const hit=onGoal && (!side || (atY*side>=labTargetEdge && lab.curl*side>=.25));
+   finishLabShot(hit,hit?(side?'Target hit!':'Goal!'):(side?'Aim for the gold target and add more curl.':'Missed. Another ball is ready.'));
+   return;
+ }
+ if(ball.y<3||ball.y>H-3||ball.x<=0||ball.shotAge>3)finishLabShot(false,'Missed. Try again.');
+}
+function advanceLabDrill(dt){
+ lab.timer-=dt;
+ if(lab.timer>0)return;
+ if(lab.hit && lab.drill===3){
+   setScreen('end');hud.summary.hidden=true;resetInput();
+   showCard('Shot Lab','Practice complete','All 4 drills cleared in '+lab.attempts+' shots.','Practice again');
+   return;
+ }
+ if(lab.hit)lab.drill++;
+ resetLabBall();
+}
 function goal(side){score[side]++;stats();resetInput();markReplay('goal',side);beep(880,.22);if(lastAttack){finish();return}setScreen('goal');restart=1.35;kickSide=1-side;announce(teamNames[side]+' scores!',1.35,side)}
 const smooth01=x=>{const t=clamp(x,0,1);return t*t*(3-2*t)};
 const skillMoves={
@@ -881,6 +1057,7 @@ function movementInput(){
 }
 function canTrick(p){return mode==='play'&&ball.owner===p.i&&!p.skill&&!p.strike&&!charging&&p.burst<=0&&p.skillWait<=0}
 function startSkill(name){
+ if(lab)return;
  const p=players[active];if(!canTrick(p))return;
  const fx=Math.sin(p.heading),fy=Math.cos(p.heading),input=movementInput(),across=input.x*fy-input.y*fx;
  // A tap on its own cuts toward the defender's open shoulder. Steering takes priority.
@@ -985,19 +1162,20 @@ function advanceStrike(p,dt){
    syncBall();
    Object.assign(ball,kickFlight(ball.x,ball.y,a.tx,a.ty,a.speed,a.curl,a.target),{owner:-1,lock:.12,passTo:a.target,shotTeam:a.target<0?p.team:null,shotAge:0});
    a.hit=true;recording.keyframe=true;
-   if(a.target<0)matchTally.shots[p.team]++;else if(p.team===0)active=a.target;
+   if(lab){lab.attempts++;lab.curl=a.curl;lab.flying=true;updateLabHud();}
+   else if(a.target<0)matchTally.shots[p.team]++;else if(p.team===0)active=a.target;
    updatePossession();updateControls();beep(a.target<0?300:470);
  }
  if(a.time>=a.contact+.055+a.recovery){p.strike=null;if(p.i===active)updateControls()}
 }
-function pass(){if(mode!=='play')return;if(ball.owner===active){const other=players[1-active];launch(active,other.x,other.y,410,0,other.i)}else if(ball.owner<0||ball.owner>=2){active=1-active;stopCharge();updateControls()}}
-function dash(){if(mode!=='play')return;const p=players[active];if(canDash(p)){p.burst=.28;p.cool=dashCooldown;updateControls();beep(180)}}
+function pass(){if(mode!=='play'||lab)return;if(ball.owner===active){const other=players[1-active];launch(active,other.x,other.y,410,0,other.i)}else if(ball.owner<0||ball.owner>=2){active=1-active;stopCharge();updateControls()}}
+function dash(){if(mode!=='play'||lab)return;const p=players[active];if(canDash(p)){p.burst=.28;p.cool=dashCooldown;updateControls();beep(180)}}
 function startShot(){
  const p=players[active];
- if(mode!=='play'||ball.owner!==active||p.strike||p.skill||charging)return;
+ if(mode!=='play'||ball.owner!==active||p.strike||p.skill||charging||lab?.feedback)return;
  const steer=movementInput().y,keeperOffset=keepers[1].y-CY;
  const openSide=Math.abs(keeperOffset)>6?-Math.sign(keeperOffset):(p.y>CY?-1:1);
- aim=Math.abs(steer)>.18?clamp(steer,-1,1):openSide*.78;
+ aim=Math.abs(steer)>.18?clamp(steer,-1,1):lab?0:openSide*.78;
  charging=true;charge=quickShotPower;bend=0;
  hud.power.hidden=false;hud.root.classList.add('is-charging');hud.shoot.classList.add('is-held');
  updateShotMeter();updateControls();
@@ -1039,14 +1217,15 @@ function stepKeepers(dt){
  for(const k of keepers){
    k.previous=k.contacts;
    const incoming=mode==='play'&&ball.owner<0&&ball.shotTeam===1-k.team&&ball.vx*k.face<0;
+   const practiceKeeper=lab?.drill===3 && k.team===1;
    if(!incoming){k.target=null;k.readIn=0}
-   if(!k.phase&&incoming&&ball.shotAge>=.14){
+   if(!k.phase&&incoming&&ball.shotAge>=(practiceKeeper?.30:.14)){
      k.readIn-=dt;
      if(k.readIn<=0){k.target=predictKeeperPlane(k);k.readIn=.065}
      else if(k.target)k.target.eta-=dt;
      if(k.target&&k.target.eta<=.32&&Math.abs(k.target.y-k.y)>10){
        const delta=k.target.y-k.y;
-       k.phase={time:0,from:k.y,travel:Math.sign(delta)*clamp(Math.abs(delta)-18,7,22),height:k.target.height*.04};
+       k.phase={time:0,from:k.y,travel:Math.sign(delta)*clamp(Math.abs(delta)-18,7,practiceKeeper?15:22),height:k.target.height*.04};
        k.target=null;
      }
    }
@@ -1055,8 +1234,9 @@ function stepKeepers(dt){
      const d=k.phase;d.time+=dt;k.y=d.from+d.travel*smooth01(d.time/.42);
      if(d.time>=.86)k.phase=null;
    }else{
-     const angle=CY+clamp((ball.y-CY)*.24,-24,24);
-     const target=k.target?CY+clamp((k.target.y-CY)*.22,-15,15):angle;
+     const angle=lab && ball.owner>=0 ? CY+lab.keeperSide*29+Math.sin(elapsed*1.6)*10 : CY+clamp((ball.y-CY)*.24,-24,24);
+     // Hold the keeper's visible starting line until the practice dive commits.
+     const target=practiceKeeper && incoming ? k.y : k.target?CY+clamp((k.target.y-CY)*.22,-15,15):angle;
      k.y+=clamp(target-k.y,-48*dt,48*dt);
    }
    k.speed=(k.y-before)/dt;k.step+=Math.abs(k.y-before)*.18;
@@ -1110,11 +1290,13 @@ function parryShot(from){
  ball.height=Math.max(0,from.h-4.15+(ball.height+4.15-from.h)*first);
  const speed=Math.hypot(ball.vx,ball.vy),side=Math.sign(ball.y-k.y)||1;
  Object.assign(ball,{vx:k.face*clamp(speed*.40,105,235),vy:side*clamp(speed*.24,65,135),lift:62,spin:0,lock:.14,shotTeam:null,passTo:-1});
+ if(lab)return true;
  matchTally.saves[k.team]++;announce(teamNames[k.team]+' save!',.95,k.team);beep(250,.12);
  if(k.phase&&k.phase.time<.72)markReplay('save',k.team);
 }
 function stepMatch(dt){
  elapsed+=dt;
+ if(lab?.feedback){advanceLabDrill(dt);return}
  if(flash>0){flash=Math.max(0,flash-dt);if(!flash)updatePossession()}
  if(mode==='goal'){stepKeepers(dt);restart-=dt;if(restart<=0)afterGoalKickoff();return}
  const carrier=players[active],oldCool=carrier.cool,oldWait=carrier.skillWait,oldBurst=carrier.burst;
@@ -1124,7 +1306,11 @@ function stepMatch(dt){
  let {x:dx,y:dy}=movementInput();
  if(nudgeLeft>0){nudgeLeft=Math.max(0,nudgeLeft-dt);if(!nudgeLeft&&stickId===null)setStick(0,0)}
  if(charging){charge=Math.min(1,charge+dt*1.55*(1-quickShotPower));if(!swipeAxis&&Math.abs(dy)>.1)aim+=(clamp(dy,-1,1)-aim)*(1-Math.exp(-12*dt));
-   if(shotId===null)bend=clamp(bend+2.5*dt*(Number(keys.has('KeyC'))-Number(keys.has('KeyZ'))),-1,1);
+   if(shotId===null){
+     const turn=Number(keys.has('KeyC'))-Number(keys.has('KeyZ'));
+     bend=clamp(bend+2.5*dt*turn,-1,1);
+     if(lab && turn && Math.abs(dy)<.1)aim=bend;
+   }
    updateShotMeter()}
  if(carrier.skill)advanceSkill(carrier,dt);
  else{
@@ -1134,9 +1320,12 @@ function stepMatch(dt){
    }
    move(carrier,dx,dy,carrier.burst>0?317:charging?102:ball.owner===active?141:158,dt)
  }
- for(const p of players)if(p.i!==active)ai(p,dt);
+ if(lab){carrier.x=clamp(carrier.x,665,825);carrier.y=clamp(carrier.y,CY-70,CY+70);}
+ else for(const p of players)if(p.i!==active)ai(p,dt);
  for(const p of players)advanceStrike(p,dt);
- if(ball.shotTeam!=null)ball.shotAge+=dt;stepKeepers(dt);
+ if(ball.shotTeam!=null)ball.shotAge+=dt;
+ if(!lab||lab.drill===3)stepKeepers(dt);
+ if(lab){stepLabBall(dt);return}
  ball.lock=Math.max(0,ball.lock-dt);
  if(ball.owner>=0){let p=players[ball.owner];syncBall();if(!ball.lock){const rival=players.filter(q=>q.team!==p.team&&dist(q,p)<(q.burst>0?33:17)).sort((a,b)=>dist(a,p)-dist(b,p))[0];if(rival){take(rival.i);syncBall()}}}
  else{
@@ -1165,7 +1354,7 @@ function update(dt){
  if(e&&(mode==='end'||elapsed-e.impact>=(e.kind==='goal'?.26:.12)))startReplay();
 }
 function render(t){
- stadium.draw({players,ball,active,mode,charging,charge,scoring:1-kickSide,replay:replayView()},t);
+ stadium.draw({players,ball,active,mode,charging,charge,lab,scoring:1-kickSide,replay:replayView()},t);
 }
 formation(0);
 [[562,293,.18],[425,200,1.4],[604,187,-.6],[520,168,-1.3]].forEach(([x,y,heading],i)=>Object.assign(players[i],{x,y,heading}));
@@ -1204,7 +1393,7 @@ function syncFullscreen(){
  fullscreenButton.hidden=!canEnterFullscreen()||(!active&&appFullscreen.matches);
  const label=active?'Exit full screen':'Enter full screen';
  fullscreenButton.setAttribute('aria-label',label);fullscreenButton.title=label;
- if(mode==='menu')$('start').textContent=needsFullscreenEntry()?'Play full screen':'Kick off';
+ if(mode==='menu')$('start').textContent=needsFullscreenEntry()?'Play full screen':'Quick Match';
  if(active)$('view-status').hidden=true;
  if(hadFullscreen&&!active&&(mode==='play'||mode==='goal'||mode==='replay'))pause();
  hadFullscreen=active;
@@ -1234,10 +1423,17 @@ bindTap('fullscreen',()=>{void changeFullscreen(!fullscreenElement(),true)});
 bindTap('start',async()=>{
  if(fullscreenPending)return;
  if(mode==='pause'){pause();return}
+ if(mode==='end'&&lab){beginLab();return}
  // Android can put its first-use system message over the pitch. Keep the clock at 1:30 until kickoff.
  if(mode==='menu'&&needsFullscreenEntry()&&await changeFullscreen(true))return;
  begin();
 });
+bindTap('start-lab',async()=>{
+ if(fullscreenPending)return;
+ if(needsFullscreenEntry())await changeFullscreen(true);
+ beginLab();
+});
+bindTap('leave-lab',leaveLab);
 bindTap('help-toggle',()=>{
  const guide=$('control-guide');guide.hidden=!guide.hidden;
  $('help-toggle').setAttribute('aria-expanded',String(!guide.hidden));
