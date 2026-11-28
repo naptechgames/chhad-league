@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#101c23" />
+    <meta name="application-name" content="Chhad League" />
+    <meta name="application-version" content="1.2.3" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="./game.webmanifest" />
+    <link rel="icon" type="image/png" href="./assets/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="./assets/icons/icon-192.png" />
+    <meta
+      name="description"
+      content="Play fast 3v3 rooftop soccer in Old Dhaka. Dribble, pass and curl shots with touch or keyboard controls."
+    />
+    <title>Chhad League · Rooftop Soccer</title>
+    <link rel="stylesheet" href="styles/arena.css" />
+  </head>
+  <body data-screen="menu">
+    <main>
+      <section class="arena" aria-label="Soccer match">
+        <div class="tools" role="group" aria-label="Game settings">
+          <button
+            type="button"
+            class="tool"
+            id="sound"
+            aria-pressed="false"
+            aria-label="Sound"
+            title="Sound off"
+          >
+            <span aria-hidden="true" class="tool-glyph"></span>
+          </button>
+          <button
+            type="button"
+            class="tool"
+            id="fullscreen"
+            aria-label="Enter full screen"
+            title="Enter full screen"
+            hidden
+          >
+            <span aria-hidden="true" class="tool-glyph"></span>
+          </button>
+          <button type="button" class="tool" id="pause" aria-label="Pause" title="Pause" hidden>
+            <span aria-hidden="true" class="tool-glyph"></span>
+          </button>
+        </div>
+        <p class="view-status" id="view-status" role="status" hidden></p>
+        <canvas
+          id="pitch"
+          tabindex="0"
+          width="1100"
+          height="595"
+          aria-label="Rooftop soccer field. Mint attacks the goal on the right."
+        ></canvas>
+        <img id="menu-backdrop" alt="" hidden />
+        <div class="match-hud" id="match-hud" hidden>
+          <div class="score" role="group" aria-label="Match score and time">
+            <div class="score-line">
+              <span class="team home">Mint</span><strong id="goals">0–0</strong
+              ><span class="team away">Coral</span>
+            </div>
+            <div class="clock-box" id="clock-box">
+              <span class="clock-label" id="clock-label">Time left</span
+              ><span class="clock" id="clock" role="timer" aria-labelledby="clock-label">1:30</span>
+            </div>
+          </div>
+          <div class="notice" id="notice"></div>
+          <div id="power" hidden>
+            <div class="meter-head">
+              <span class="meter-title" id="power-label">Shot power</span
+              ><strong id="power-value">50%</strong>
+            </div>
+            <span
+              class="track"
+              id="power-track"
+              role="meter"
+              aria-labelledby="power-label"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="50"
+              ><i id="fill"></i
+            ></span>
+            <span id="curl">Straight</span>
+          </div>
+        </div>
+        <div class="mobile" id="touch-controls" role="group" aria-label="Touch controls" hidden>
+          <div class="stick" id="stick" role="group" aria-label="Move">
+            <button type="button" class="direction" data-dir="up" aria-label="Move up"></button>
+            <button type="button" class="direction" data-dir="left" aria-label="Move left"></button>
+            <button type="button" class="direction" data-dir="right" aria-label="Move right"></button>
+            <button type="button" class="direction" data-dir="down" aria-label="Move down"></button>
+            <span class="nub" id="nub" aria-hidden="true"></span>
+          </div>
+          <div class="actions">
+            <button type="button" class="action" id="stepover" aria-label="Stepover">
+              <span>Step<wbr />over</span>
+            </button>
+            <button type="button" class="action" id="feint" aria-label="Body feint">Feint</button>
+            <button type="button" class="action" id="pass">Pass</button>
+            <button type="button" class="action" id="dash">Dash</button>
+            <button type="button" class="action shoot" id="shoot">Shoot</button>
+          </div>
+        </div>
+        <div class="replay-bar" id="replay-bar" hidden>
+          <div class="replay-caption">
+            <b>Replay · ½×</b><span id="replay-event"></span
+            ><span class="replay-track" aria-hidden="true"><i id="replay-fill"></i></span>
+          </div>
+          <button type="button" class="replay-skip" id="skip-replay" title="Skip replay (Enter)">
+            Skip replay
+          </button>
+        </div>
+        <div class="overlay" id="overlay" role="group" aria-labelledby="heading">
+          <div class="card">
+            <img id="brand-mark" alt="" width="36" height="36" hidden />
+            <p class="stage" id="card-stage">Old Dhaka rooftops</p>
+            <h1 class="call" id="heading">Chhad League</h1>
+            <p class="detail" id="detail">
+              Play as Mint. Attack the goal on the right and outscore Coral in 90 seconds.
+            </p>
+            <table class="result-table" id="match-summary" aria-label="Full-time team statistics" hidden>
+              <thead>
+                <tr>
+                  <th scope="col">Match stats</th>
+                  <th scope="col" class="home">Mint</th>
+                  <th scope="col" class="away">Coral</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Shots</th>
+                  <td id="mint-shots">0</td>
+                  <td id="coral-shots">0</td>
+                </tr>
+                <tr>
+                  <th scope="row">Keeper saves</th>
+                  <td id="mint-saves">0</td>
+                  <td id="coral-saves">0</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="card-actions">
+              <button type="button" class="start" id="start">Quick Match</button>
+              <button
+                type="button"
+                class="help-toggle"
+                id="help-toggle"
+                aria-expanded="false"
+                aria-controls="control-guide"
+              >
+                Controls
+              </button>
+            </div>
+            <div class="control-guide" id="control-guide" hidden>
+              <p class="touch-guide" id="touch-guide"></p>
+              <div class="keys">
+                <p>
+                  <kbd>WASD</kbd> or arrows to move. Tap <kbd>Space</kbd> to shoot or tackle. Hold for
+                  power, aim with up or down, and curl with <kbd>Z</kbd> / <kbd>C</kbd>.
+                </p>
+                <p>
+                  <kbd>F</kbd>, <kbd>X</kbd> or <kbd>Enter</kbd> to pass or switch. <kbd>Shift</kbd> to
+                  dash. <kbd>Q</kbd> for a stepover, <kbd>E</kbd> for a body feint. <kbd>Esc</kbd> to
+                  pause.
+                </p>
+                <p>With a mouse, hold and drag up or down on the field to curl a shot.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <div id="live" role="status" aria-atomic="true" class="live"></div>
+    </main>
+    <script src="config.js"></script>
+    <script src="scripts/branding.js"></script>
+    <script src="scripts/stadium.js"></script>
+    <script src="scripts/match.js"></script>
+  </body>
+</html>

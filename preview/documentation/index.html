@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en-US"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#122b31"><title>Chhad League · Game guide</title><link rel="stylesheet" href="guide.css"></head>
+<body><header><a href="../index.html">Chhad League</a><span>Rooftop Soccer · 1.2.3</span></header><main>
+<h1>Game guide</h1><p class="intro">Host the game, learn the controls and make the opening screen your own.</p>
+<nav aria-label="Guide sections"><a href="#install">Install</a><a href="#screens">Match screens</a><a href="#controls">Controls</a><a href="#brand">Branding</a><a href="#source">Editable source</a><a href="#faq">FAQ</a></nav>
+<section id="install"><h2>Open or host the game</h2>
+<ol><li>Extract the entire main ZIP. Open its <code>index.html</code> and choose <b>Play game</b> for a local desktop preview.</li>
+<li>For phones, upload the contents of <code>game/</code> to a folder on your HTTPS web host. Keep <code>index.html</code>, <code>config.js</code>, <code>game.webmanifest</code>, <code>scripts/</code>, <code>styles/</code> and <code>assets/</code> together.</li>
+<li>Open that folder's URL on your phone. Tap <b>Play full screen</b> if shown. Dismiss Android’s first-use fullscreen tip, then tap <b>Quick Match</b>. The match clock starts at kickoff.</li></ol>
+<p>For a local web server, open a terminal in <code>game/</code> and run the command below with Python 3 installed. On that computer, open <code>http://localhost:8000/</code>.</p>
+<pre><code>python -m http.server 8000</code></pre>
+<p>To embed the game, give the frame space, point it at your deployed game folder and allow fullscreen. Browsers that restrict fullscreen can still play inside the frame.</p>
+<pre><code>&lt;iframe src="./game/" title="Chhad League"
+  style="width:100%;height:75vh;border:0"
+  allow="fullscreen" allowfullscreen&gt;&lt;/iframe&gt;</code></pre>
+</section>
+<section id="screens"><h2>Play a match</h2><p>You control Mint’s active outfield player. Each team fields two outfield players and a goalkeeper. Mint attacks right in landscape and up in portrait. Outscore Coral before the clock expires. Each goal or diving save can trigger a half-speed replay. Skip it to return to the match.</p>
+<!-- ui-guide:start -->
+<div class="pairs">
+<figure><img src="images/ui-menu.jpg" width="1600" height="900" alt="Opening screen with the start, controls and sound buttons marked"><figcaption><b>Kickoff.</b> 1 starts the match. 2 shows the controls. 3 enables the synthesized game sounds.</figcaption></figure>
+<figure><img src="images/ui-gameplay.jpg" width="1600" height="900" alt="A charged curve shot with the score, shot meter and pause marked"><figcaption><b>On the ball.</b> 1 shows the score and clock. 2 shows the power and curl of a held shot. 3 pauses play.</figcaption></figure>
+<figure><img src="images/ui-replay.jpg" width="1600" height="900" alt="A goalkeeper diving from the replay camera with the replay controls marked"><figcaption><b>Replay.</b> 1 names the goal or diving save and shows progress. 2 returns to live play.</figcaption></figure>
+<figure><img src="images/ui-results.jpg" width="1600" height="900" alt="The full-time screen with match statistics and rematch marked"><figcaption><b>Full time.</b> 1 compares shots and saves. 2 starts a fresh match. A trailing team in possession when time expires can earn a final attack of up to seven game seconds.</figcaption></figure>
+</div><!-- ui-guide:end -->
+</section>
+<section id="controls"><h2>Phone and keyboard controls</h2><div class="touch"><figure><img src="images/ui-touch.jpg" width="450" height="800" alt="Portrait phone showing joystick, shoot, skill and pause callouts"><figcaption>1 joystick · 2 shoot or tackle · 3 skill move · 4 pause</figcaption></figure>
+<div><!-- icon-guide:start --><table><thead><tr><th>Action</th><th>Touch</th><th>Keyboard or mouse</th></tr></thead><tbody>
+<tr><th>Move</th><td>Drag the left joystick. Use the right thumb for actions.</td><td>WASD or arrow keys.</td></tr>
+<tr><th>Shoot</th><td>Tap Shoot for a quick shot. Hold to charge and release to strike.</td><td>Tap or hold Space.</td></tr>
+<tr><th>Curve</th><td>Hold Shoot and swipe left or right in portrait, or up or down in landscape. Release to kick.</td><td>Hold Space, use up/down to aim and Z/C to curl. A mouse can also hold and drag vertically on the field.</td></tr>
+<tr><th>Pass or switch</th><td>Tap Pass in possession or Switch while defending.</td><td>F, X or Enter.</td></tr>
+<tr><th>Beat a defender</th><td>Tap Stepover or Feint while dribbling. Approach a nearby defender and steer toward open space.</td><td>Q for stepover. E for body feint.</td></tr>
+<tr><th>Dash or tackle</th><td>Tap Dash. Off the ball the Shoot button changes to Tackle. Its cooldown bar shows when a new burst is available.</td><td>Shift to dash. Space to tackle while defending.</td></tr>
+<tr><th>Pause or skip</th><td>Tap Pause to stop the clock. Use Skip replay to return to play.</td><td>Esc to pause or resume. Enter to skip a replay.</td></tr></tbody></table><!-- icon-guide:end -->
+</div></div></section>
+<section id="brand"><h2>Change the branding</h2>
+<p>Open <code>game/config.js</code> in a text editor. Change the values inside the quotation marks, save, then reload the page. The original court is drawn in code. The optional backdrop applies to the opening menu.</p>
+<pre><code>window.ChhadLeagueConfig = {
+  title: "River Cup",
+  courtLabel: "Evening exhibition",
+  matchSeconds: 60,
+  accentColor: "#a7eed0",
+  menuLogo: "assets/icons/icon-192.png",
+  menuBackdrop: "assets/branding/court.jpg"
+};</code></pre>
+<!-- swap-guide:start --><div class="pairs">
+<figure><img loading="lazy" src="images/brand-before.jpg" width="1100" height="650" alt="Default Chhad League branding"><figcaption>Original title, gold button and live rooftop.</figcaption></figure>
+<figure><img loading="lazy" src="images/brand-after.jpg" width="1100" height="650" alt="River Cup menu with new text, a mint button and a custom backdrop"><figcaption>The same game with a 60-second clock, new title, accent and menu image.</figcaption></figure>
+</div>
+<ol><li><b>Menu logo.</b> Place your PNG in <code>assets/</code>, then set <code>menuLogo</code> to its path. An empty string hides the mark. A missing image leaves the title visible.</li>
+<li><b>Menu backdrop.</b> Create <code>assets/branding/</code>, copy in your landscape JPG and set <code>menuBackdrop</code> as shown. An empty or missing backdrop displays the rendered court. Use an image you have rights to distribute.</li>
+<li><b>Home-screen icons.</b> Replace <code>assets/icons/icon-192.png</code> and <code>icon-512.png</code> with square PNGs of the same names and sizes. Keep the design inside the central safe area.</li>
+<li><b>App title.</b> Set <code>title</code> for the menu and browser tab. Edit <code>name</code> and <code>short_name</code> in <code>game.webmanifest</code> for a home-screen installation. Update the static page title and description in <code>index.html</code> for link previews.</li>
+<li><b>Clock and color.</b> Use a whole number from 30 to 300 for <code>matchSeconds</code> and a six-digit hex color for <code>accentColor</code>. The default clock is 90 seconds.</li></ol><!-- swap-guide:end -->
+</section>
+<section id="source"><h2>Edit the source</h2>
+<p><code>game/</code> is ready to host. <code>source/</code> is the equivalent readable source with a copy script. You can run <code>source/index.html</code> directly. To ship source edits, open a terminal inside <code>source/</code> and run <code>node build.mjs</code> with Node.js 18 or newer. The script copies into the sibling <code>game/</code> folder. Keep your own changes in <code>source/</code> if you use this workflow.</p>
+<table><thead><tr><th>File</th><th>What to edit</th></tr></thead><tbody>
+<tr><td><code>config.js</code></td><td>Menu branding and match duration.</td></tr>
+<tr><td><code>styles/arena.css</code></td><td>HUD, buttons, typography, safe areas and portrait layouts.</td></tr>
+<tr><td><code>scripts/match.js</code></td><td>Match rules, input and AI. <code>kickFlight</code> controls the launch and <code>fly</code> advances the ball. <code>poseKeeper</code> places the keeper rig before collision checks.</td></tr>
+<tr><td><code>scripts/stadium.js</code></td><td>Stadium geometry, player kits, skinning, shadows and cameras. <code>makeKit</code> creates the player meshes. WebGL and the Canvas 2D fallback share the scene.</td></tr>
+<tr><td><code>scripts/branding.js</code></td><td>Configuration validation and loading menu images.</td></tr></tbody></table>
+<p>The models, balls and stadium are procedural geometry. Sound effects use the browser's Web Audio oscillator. Display fonts use the device's installed fonts. The runtime consists of static HTML, CSS, JavaScript, a web app manifest and two PNG icons.</p>
+</section>
+<section id="faq"><h2>Frequently asked questions</h2>
+<h3>Where do I change the game title or icon?</h3><p>Use the <a href="#brand">branding guide</a>. If an installed icon still shows the previous art, remove its shortcut and add it again after refreshing the hosted game.</p>
+<h3>How do I share a playable link?</h3><p>Upload the contents of <code>game/</code> to a static HTTPS host and share the folder URL. A link starting with <code>file:</code> points only to a file on your own computer.</p>
+<h3>Which way do I attack when I rotate my phone?</h3><p>Mint attacks up in portrait and right in landscape. Lift both thumbs after rotating, then use the joystick again. If the address bar stays visible inside another site, open the game URL directly.</p>
+<h3>Does the game need accounts or advertising to run?</h3><p>The match runs locally in the browser. The package contains no advertising SDK, analytics, purchases or online multiplayer. AdSense and AdMob are separate Google services. Adding them would require your own accounts and acceptance of their terms, possible costs and revenue sharing.</p>
+<h3>Can I promise offline play after installing the icon?</h3><p>The manifest provides an app name, icons and fullscreen launch. The web release loads from its host. An offline-first service worker would be an additional integration.</p>
+<h3>How can I report a problem?</h3><p>Support is provided in English. Include the game version, browser version, device, orientation and the actions that reproduce the issue. Use the support channel supplied with your copy.</p>
+</section><footer><a href="../index.html">Return to start</a><a href="#install">Back to setup</a></footer></main></body></html>
